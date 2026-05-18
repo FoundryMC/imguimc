@@ -1,1 +1,2 @@
-- Fix RenderImGuiEventsNeoforge.Post not being fired
+- Fix texture data leaks on resize
+- Fix fabric publishing < 26.1

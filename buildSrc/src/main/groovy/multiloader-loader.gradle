@@ -64,7 +64,7 @@ tasks.named('sourcesJar', Jar) {
 publishMods {
     def isNeoforge = project.parent.name == "neoforge"
     def isFabric = project.parent.name == "fabric"
-    def isMappedFabric = project.parent.name == "fabric-mapped"
+    def isMappedFabric = isFabric && sc.current.parsed < "26.1"
     def isSnapshot = sc.current.version.contains("snapshot")
 
     assert isNeoforge || isFabric || isMappedFabric
