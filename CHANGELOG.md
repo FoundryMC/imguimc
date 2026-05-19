@@ -1,2 +1,1 @@
-- Fix texture data leaks on resize
-- Fix fabric publishing < 26.1
+- Add support for 26.2-snapshot-8
