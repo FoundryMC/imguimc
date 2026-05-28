@@ -16,7 +16,7 @@ public class ImGuiMCPlatformImpl implements ImGuiMCPlatform {
 
     @Override
     public void registerImGuiFonts(final ImFontAtlas atlas, final ImFont defaultFont, final float fontScale) {
-        NeoForge.EVENT_BUS.post(new RegisterImGuiFontsEventNeoforge(atlas, defaultFont, fontScale));
+        ModLoader.postEvent(new RegisterImGuiFontsEventNeoforge(atlas, defaultFont, fontScale));
     }
 
     @Override

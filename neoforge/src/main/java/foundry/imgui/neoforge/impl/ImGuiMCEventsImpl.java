@@ -41,7 +41,7 @@ public class ImGuiMCEventsImpl implements ImGuiMCEvents {
 
     @Override
     public void onRegisterImGuiFonts(final RegisterImGuiFontsEvent event) {
-        NeoForge.EVENT_BUS.<RegisterImGuiFontsEventNeoforge>addListener(forgeEvent -> event.registerImGuiFonts(forgeEvent.getAtlas(), forgeEvent.getDefaultFont(), forgeEvent.getFontScale()));
+        modBus().<RegisterImGuiFontsEventNeoforge>addListener(forgeEvent -> event.registerImGuiFonts(forgeEvent.getAtlas(), forgeEvent.getDefaultFont(), forgeEvent.getFontScale()));
     }
 
     @Override
