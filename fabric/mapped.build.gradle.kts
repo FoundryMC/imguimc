@@ -5,6 +5,20 @@ plugins {
     id("multiloader-loader")
 }
 
+sourceSets {
+    val main by getting
+
+    val testmod by creating {
+        compileClasspath += main.compileClasspath
+        runtimeClasspath += main.runtimeClasspath
+    }
+
+    named("test") {
+        compileClasspath += testmod.compileClasspath
+        runtimeClasspath += testmod.runtimeClasspath
+    }
+}
+
 loom {
     fabricModJsonPath = project(":fabric").file("src/main/resources/fabric.mod.json")
 
@@ -12,12 +26,26 @@ loom {
         options.put("mark-corresponding-synthetics", "1") // Adds names to lambdas - useful for mixins
     }
 
-    runConfigs.remove(runConfigs["server"])
-    runConfigs.all {
-        configName = "Fabric ${environment.capitalized()}"
-        ideConfigGenerated(true)
-        vmArgs("-Dmixin.debug.export=true") // Exports transformed classes for debugging
-        runDir = "../../run" // Shares the run directory between versions
+    runConfigs {
+        named("client") {
+            client()
+            source(sourceSets.getByName("testmod"))
+        }
+
+        remove(runConfigs["server"])
+
+        all {
+            configName = "Fabric ${environment.capitalized()}"
+            ideConfigGenerated(true)
+            vmArgs("-Dmixin.debug.export=true") // Exports transformed classes for debugging
+            runDir = "../../run" // Shares the run directory between versions
+        }
+    }
+
+    mods {
+        register("imguimc-testmod") {
+            sourceSet(sourceSets.getByName("testmod"))
+        }
     }
 }
 
