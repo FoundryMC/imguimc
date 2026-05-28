@@ -44,8 +44,10 @@ public class ImGuiHandler {
             imPlotContext = ImPlot.createContext();
             this.active = new AtomicBoolean();
             this.fontsDirty = new AtomicBoolean();
+            ImGuiMCPlatform.INSTANCE.imGuiLoadPre();
             this.rendererImpl.init();
             this.windowImpl.init(mainWindow, true);
+            ImGuiMCPlatform.INSTANCE.imGuiLoadPost();
 
             // TODO style sheet init event
 //            VeilImGuiStylesheet.initStyles();

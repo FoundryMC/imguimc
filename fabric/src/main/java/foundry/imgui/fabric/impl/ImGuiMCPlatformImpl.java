@@ -1,5 +1,6 @@
 package foundry.imgui.fabric.impl;
 
+import foundry.imgui.fabric.api.event.ImGuiLoadEventsFabric;
 import foundry.imgui.fabric.api.event.RegisterImGuiFontsEventFabric;
 import foundry.imgui.fabric.api.event.RenderImGuiEventsFabric;
 import foundry.imgui.fabric.api.event.ImGuiLoadEventFabric;
@@ -29,5 +30,15 @@ public class ImGuiMCPlatformImpl implements ImGuiMCPlatform {
     @Override
     public void afterImGuiLoad() {
         ImGuiLoadEventFabric.EVENT.invoker().afterImGuiLoad();
+    }
+
+    @Override
+    public void imGuiLoadPre() {
+        ImGuiLoadEventsFabric.PRE.invoker().imGuiLoadPre();
+    }
+
+    @Override
+    public void imGuiLoadPost() {
+        ImGuiLoadEventsFabric.POST.invoker().imGuiLoadPost();
     }
 }

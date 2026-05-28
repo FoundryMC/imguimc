@@ -150,6 +150,7 @@ public class ImGuiRendererGL33 implements ImGuiRenderer {
         this.data = null;
     }
 
+    @Override
     public void newFrame() {
         if (this.data.shaderHandle == 0) {
             this.createDeviceObjects();

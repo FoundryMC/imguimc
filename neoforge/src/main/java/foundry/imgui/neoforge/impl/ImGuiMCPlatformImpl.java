@@ -2,6 +2,7 @@ package foundry.imgui.neoforge.impl;
 
 import foundry.imgui.impl.platform.ImGuiMCPlatform;
 import foundry.imgui.neoforge.api.event.ImGuiLoadEventNeoforge;
+import foundry.imgui.neoforge.api.event.ImGuiLoadEventsNeoforge;
 import foundry.imgui.neoforge.api.event.RegisterImGuiFontsEventNeoforge;
 import foundry.imgui.neoforge.api.event.RenderImGuiEventsNeoforge;
 import imgui.ImFont;
@@ -31,5 +32,15 @@ public class ImGuiMCPlatformImpl implements ImGuiMCPlatform {
     @Override
     public void afterImGuiLoad() {
         ModLoader.postEvent(new ImGuiLoadEventNeoforge());
+    }
+
+    @Override
+    public void imGuiLoadPre() {
+        ModLoader.postEvent(new ImGuiLoadEventsNeoforge.Pre());
+    }
+
+    @Override
+    public void imGuiLoadPost() {
+        ModLoader.postEvent(new ImGuiLoadEventsNeoforge.Post());
     }
 }

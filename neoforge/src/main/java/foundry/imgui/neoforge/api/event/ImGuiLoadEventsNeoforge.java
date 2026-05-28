@@ -2,24 +2,25 @@ package foundry.imgui.neoforge.api.event;
 
 import foundry.imgui.api.ImGuiMC;
 import net.neoforged.bus.api.Event;
+import net.neoforged.fml.event.IModBusEvent;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * Events fired when the ImGui frame begins and ends.
+ * Fired before and after ImGui loads successfully.
  *
- * @since 1.0.0
+ * @since 1.3.0
  */
-public abstract class RenderImGuiEventsNeoforge extends Event {
+public abstract class ImGuiLoadEventsNeoforge extends Event implements IModBusEvent {
 
-    RenderImGuiEventsNeoforge() {
+    ImGuiLoadEventsNeoforge() {
     }
 
     /**
-     * Called right after the frame starts.
+     * Fired right before ImGui handlers are initialized.
      * <br>
      * The context is already current, so there's no need to call {@link ImGuiMC#withImGui}
      */
-    public static final class Pre extends RenderImGuiEventsNeoforge {
+    public static final class Pre extends ImGuiLoadEventsNeoforge {
 
         @ApiStatus.Internal
         public Pre() {
@@ -27,11 +28,11 @@ public abstract class RenderImGuiEventsNeoforge extends Event {
     }
 
     /**
-     * Called right before ending the frame.
+     * Fired right after ImGui handlers are initialized.
      * <br>
      * The context is already current, so there's no need to call {@link ImGuiMC#withImGui}
      */
-    public static final class Post extends RenderImGuiEventsNeoforge {
+    public static final class Post extends ImGuiLoadEventsNeoforge {
 
         @ApiStatus.Internal
         public Post() {
