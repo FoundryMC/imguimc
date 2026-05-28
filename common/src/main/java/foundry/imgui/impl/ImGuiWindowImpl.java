@@ -2,20 +2,33 @@ package foundry.imgui.impl;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import com.mojang.blaze3d.GLFWErrorCapture;
+import com.mojang.blaze3d.GLFWErrorScope;
+import com.mojang.blaze3d.pipeline.MainTarget;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.Window;
+import com.mojang.blaze3d.systems.BackendCreationException;
+import com.mojang.blaze3d.systems.GpuBackend;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import imgui.*;
 import imgui.callback.*;
 import imgui.flag.*;
 import imgui.lwjgl3.glfw.ImGuiImplGlfwNative;
+import net.minecraft.CrashReport;
+import net.minecraft.ReportedException;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.*;
 import org.lwjgl.system.Callback;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.NativeResource;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.function.Supplier;
 
 /**
  * This class is a straightforward port of the
@@ -38,6 +51,7 @@ public class ImGuiWindowImpl {
      */
     protected static class Data {
         protected long window = -1;
+        protected GpuBackend backend = null;
         protected GlfwClientApi clientApi = GlfwClientApi.UNKNOWN;
         protected double time = 0.0;
         protected long mouseWindow = -1;
@@ -543,19 +557,19 @@ public class ImGuiWindowImpl {
         return new Data();
     }
 
-    public boolean initForOpenGL(final long window, final boolean installCallbacks) {
+    public boolean initForOpenGL(final Window window, final boolean installCallbacks) {
         return this.initImpl(window, installCallbacks, GlfwClientApi.OPENGL);
     }
 
-    public boolean initForVulkan(final long window, final boolean installCallbacks) {
+    public boolean initForVulkan(final Window window, final boolean installCallbacks) {
         return this.initImpl(window, installCallbacks, GlfwClientApi.VULKAN);
     }
 
-    public boolean initForOther(final long window, final boolean installCallbacks) {
+    public boolean initForOther(final Window window, final boolean installCallbacks) {
         return this.initImpl(window, installCallbacks, GlfwClientApi.OTHER);
     }
 
-    private boolean initImpl(final long window, final boolean installCallbacks, final GlfwClientApi clientApi) {
+    private boolean initImpl(final Window window, final boolean installCallbacks, final GlfwClientApi clientApi) {
         final ImGuiIO io = ImGui.getIO();
 
         io.setBackendPlatformName("imgui-java_impl_glfw");
@@ -565,7 +579,8 @@ public class ImGuiWindowImpl {
         }
 
         this.data = this.newData();
-        this.data.window = window;
+        this.data.window = ImGuiMCImpl.getWindowHandle(window);
+        this.data.backend = window.backend();
         this.data.time = 0.0;
         this.data.isWayland = isWayland();
 
@@ -621,7 +636,7 @@ public class ImGuiWindowImpl {
 
         // Chain GLFW callbacks: our callbacks will call the user's previously installed callbacks, if any.
         if (installCallbacks) {
-            this.installCallbacks(window);
+            this.installCallbacks(this.data.window);
         }
 
         // Update monitors the first time (note: monitor callback are broken in GLFW 3.2 and earlier, see github.com/glfw/glfw/issues/784)
@@ -629,12 +644,12 @@ public class ImGuiWindowImpl {
 
         // Our mouse update function expect PlatformHandle to be filled for the main viewport
         final ImGuiViewport mainViewport = ImGui.getMainViewport();
-        mainViewport.setPlatformHandle(window);
+        mainViewport.setPlatformHandle(this.data.window);
         if (IS_WINDOWS) {
-            mainViewport.setPlatformHandleRaw(GLFWNativeWin32.glfwGetWin32Window(window));
+            mainViewport.setPlatformHandleRaw(GLFWNativeWin32.glfwGetWin32Window(this.data.window));
         }
         if (IS_APPLE) {
-            mainViewport.setPlatformHandleRaw(GLFWNativeCocoa.glfwGetCocoaWindow(window));
+            mainViewport.setPlatformHandleRaw(GLFWNativeCocoa.glfwGetCocoaWindow(this.data.window));
         }
         this.updateViewports();
 
@@ -945,7 +960,7 @@ public class ImGuiWindowImpl {
         glfwGetWindowSize(window, this.props.windowW, this.props.windowH);
 
         //? if >=1.21.6 {
-        /*final com.mojang.blaze3d.textures.GpuTextureView view = renderTarget.getColorTextureView();
+        /*final GpuTextureView view = renderTarget.getColorTextureView();
         this.props.displayW = view.getWidth(0);
         this.props.displayH = view.getHeight(0);
         *///? } else {
@@ -1020,6 +1035,40 @@ public class ImGuiWindowImpl {
         return this.props.displayW == width && this.props.displayH == height;
     }
 
+    private static @Nullable RenderTarget getRenderTarget(final ImGuiViewport vp) {
+        if (vp.getPlatformUserData() == null) {
+            return null;
+        }
+        final RenderTarget renderTarget = ((ViewportData) vp.getPlatformUserData()).renderTarget;
+
+        final int width = (int) vp.getSizeX();
+        final int height = (int) vp.getSizeY();
+        if (renderTarget.width != width || renderTarget.height != height) {
+            renderTarget.resize(width, height);
+        }
+        return renderTarget;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends RenderViewportData> @Nullable T getRenderData(final ImGuiViewport vp, final Supplier<T> factory) {
+        final RenderTarget renderTarget = getRenderTarget(vp);
+        if (renderTarget == null) {
+            return null;
+        }
+
+        final ViewportData data = (ViewportData) vp.getPlatformUserData();
+        if(data.viewportData == null) {
+            data.viewportData = factory.get();
+        }
+        data.viewportData.setRenderTarget(renderTarget);
+        return (T) data.viewportData;
+    }
+
+    public interface RenderViewportData extends NativeResource {
+
+        void setRenderTarget(final RenderTarget target);
+    }
+
     //--------------------------------------------------------------------------------------------------------
     // MULTI-VIEWPORT / PLATFORM INTERFACE SUPPORT
     // This is an _advanced_ and _optional_ feature, allowing the backend to create and handle multiple viewports simultaneously.
@@ -1028,6 +1077,8 @@ public class ImGuiWindowImpl {
 
     private static final class ViewportData {
         long window = -1;
+        RenderTarget renderTarget;
+        RenderViewportData viewportData;
         boolean windowOwned = false;
         long ignoreWindowPosEventFrame = -1;
         long ignoreWindowSizeEventFrame = -1;
@@ -1077,6 +1128,44 @@ public class ImGuiWindowImpl {
         vp.setPlatformRequestResize(true);
     }
 
+    private static long createGlfwWindow(
+            final int width,
+            final int height,
+            final long share,
+            final GpuBackend backend,
+            final boolean decorated,
+            final boolean floating) throws BackendCreationException {
+        final GLFWErrorCapture glfwErrors = new GLFWErrorCapture();
+
+        final long windowHandle;
+        try (final GLFWErrorScope unused = new GLFWErrorScope(glfwErrors)) {
+            backend.setWindowHints();
+
+            // GLFW 3.2 unfortunately always set focus on glfwCreateWindow() if GLFW_VISIBLE is set, regardless of GLFW_FOCUSED
+            // With GLFW 3.3, the hint GLFW_FOCUS_ON_SHOW fixes this problem
+            glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+            glfwWindowHint(GLFW_FOCUSED, GLFW_FALSE);
+            if (glfwHasFocusOnShow) {
+                glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_FALSE);
+            }
+            glfwWindowHint(GLFW_DECORATED, decorated ? GLFW_FALSE : GLFW_TRUE);
+            if (glfwHasWindowTopmost) {
+                glfwWindowHint(GLFW_FLOATING, floating ? GLFW_TRUE : GLFW_FALSE);
+            }
+
+            windowHandle = glfwCreateWindow(width, height, "No Title Yet", MemoryUtil.NULL, share);
+            if (windowHandle == 0L) {
+                backend.handleWindowCreationErrors(glfwErrors.firstError());
+            }
+        }
+
+        for (final GLFWErrorCapture.Error error : glfwErrors) {
+            ImGuiMCImpl.LOGGER.error("GLFW error collected during GL backend initialization: {}", error);
+        }
+
+        return windowHandle;
+    }
+
     private final class CreateWindowFunction extends ImPlatformFuncViewport {
         @Override
         public void accept(final ImGuiViewport vp) {
@@ -1088,21 +1177,21 @@ public class ImGuiWindowImpl {
                 ImGuiWindowImpl.this.data.mouseIgnoreButtonUpWaitForFocusLoss = true;
             }
 
-            // GLFW 3.2 unfortunately always set focus on glfwCreateWindow() if GLFW_VISIBLE is set, regardless of GLFW_FOCUSED
-            // With GLFW 3.3, the hint GLFW_FOCUS_ON_SHOW fixes this problem
-            glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-            glfwWindowHint(GLFW_FOCUSED, GLFW_FALSE);
-            if (glfwHasFocusOnShow) {
-                glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_FALSE);
+            try {
+                final long shareWindow = (ImGuiWindowImpl.this.data.clientApi == GlfwClientApi.OPENGL) ? ImGuiWindowImpl.this.data.window : NULL;
+                vd.renderTarget = new MainTarget((int) vp.getSizeX(), (int) vp.getSizeY());
+                vd.window = createGlfwWindow(
+                        (int) vp.getSizeX(),
+                        (int) vp.getSizeY(),
+                        shareWindow,
+                        ImGuiWindowImpl.this.data.backend,
+                        vp.hasFlags(ImGuiViewportFlags.NoDecoration),
+                        vp.hasFlags(ImGuiViewportFlags.TopMost));
+                vd.windowOwned = true;
+            } catch (final BackendCreationException e) {
+                final CrashReport crashReport = CrashReport.forThrowable(e, "Creating ImGui Viewport");
+                throw new ReportedException(crashReport);
             }
-            glfwWindowHint(GLFW_DECORATED, vp.hasFlags(ImGuiViewportFlags.NoDecoration) ? GLFW_FALSE : GLFW_TRUE);
-            if (glfwHasWindowTopmost) {
-                glfwWindowHint(GLFW_FLOATING, vp.hasFlags(ImGuiViewportFlags.TopMost) ? GLFW_TRUE : GLFW_FALSE);
-            }
-
-            final long shareWindow = (ImGuiWindowImpl.this.data.clientApi == GlfwClientApi.OPENGL) ? ImGuiWindowImpl.this.data.window : NULL;
-            vd.window = glfwCreateWindow((int) vp.getSizeX(), (int) vp.getSizeY(), "No Title Yet", NULL, shareWindow);
-            vd.windowOwned = true;
 
             vp.setPlatformHandle(vd.window);
 
@@ -1157,6 +1246,11 @@ public class ImGuiWindowImpl {
                     }
                 }
 
+                if (vd.renderTarget != null) {
+                    vd.renderTarget.destroyBuffers();
+                    vd.renderTarget = null;
+                }
+
                 Callbacks.glfwFreeCallbacks(vd.window);
                 glfwDestroyWindow(vd.window);
 
@@ -1209,7 +1303,7 @@ public class ImGuiWindowImpl {
     private static final class SetWindowPosFunction extends ImPlatformFuncViewportImVec2 {
         private final ImGuiHandler bridge;
 
-        private SetWindowPosFunction(ImGuiHandler bridge) {
+        private SetWindowPosFunction(final ImGuiHandler bridge) {
             this.bridge = bridge;
         }
 
@@ -1243,10 +1337,15 @@ public class ImGuiWindowImpl {
     }
 
     private static final class SetWindowSizeFunction extends ImPlatformFuncViewportImVec2 {
+        private final ImGuiHandler bridge;
         private final int[] x = new int[1];
         private final int[] y = new int[1];
         private final int[] width = new int[1];
         private final int[] height = new int[1];
+
+        private SetWindowSizeFunction(final ImGuiHandler bridge) {
+            this.bridge = bridge;
+        }
 
         @Override
         public void accept(final ImGuiViewport vp, final ImVec2 value) {
@@ -1267,7 +1366,7 @@ public class ImGuiWindowImpl {
                 glfwGetWindowSize(vd.window, this.width, this.height);
                 glfwSetWindowPos(vd.window, this.x[0], this.y[0] - this.height[0] + (int) value.y);
             }
-            vd.ignoreWindowSizeEventFrame = ImGui.getFrameCount();
+            vd.ignoreWindowSizeEventFrame = this.bridge.getFrame();
             glfwSetWindowSize(vd.window, (int) value.x, (int) value.y);
         }
     }
@@ -1353,6 +1452,7 @@ public class ImGuiWindowImpl {
             final ViewportData vd = (ViewportData) vp.getPlatformUserData();
             if (vd != null && this.data.clientApi == GlfwClientApi.OPENGL) {
                 glfwMakeContextCurrent(vd.window);
+                vd.renderTarget.blitToScreen();
                 glfwSwapBuffers(vd.window);
             }
         }
@@ -1372,7 +1472,7 @@ public class ImGuiWindowImpl {
         platformIO.setPlatformGetWindowPos(new GetWindowPosFunction());
         platformIO.setPlatformSetWindowPos(new SetWindowPosFunction(this.bridge));
         platformIO.setPlatformGetWindowSize(new GetWindowSizeFunction());
-        platformIO.setPlatformSetWindowSize(new SetWindowSizeFunction());
+        platformIO.setPlatformSetWindowSize(new SetWindowSizeFunction(this.bridge));
         platformIO.setPlatformSetWindowTitle(new SetWindowTitleFunction());
         platformIO.setPlatformSetWindowFocus(new SetWindowFocusFunction());
         platformIO.setPlatformGetWindowFocus(new GetWindowFocusFunction());
@@ -1386,6 +1486,7 @@ public class ImGuiWindowImpl {
         final ImGuiViewport mainViewport = ImGui.getMainViewport();
         final ViewportData vd = new ViewportData();
         vd.window = this.data.window;
+        vd.renderTarget = ImGuiMCImpl.getMainRenderTarget();
         vd.windowOwned = false;
         mainViewport.setPlatformUserData(vd);
         mainViewport.setPlatformHandle(this.data.window);

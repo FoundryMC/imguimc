@@ -19,11 +19,6 @@ public class ImGuiTestMod implements ClientModInitializer {
         });
         ImGuiMCEvents.INSTANCE.preRenderImGuiEvent(() -> {
             ImGui.showDemoWindow();
-            ImGui.showMetricsWindow();
-            if (ImGui.begin("Test dock")) {
-                ImGui.dockSpace(1);
-            }
-            ImGui.end();
         });
     }
 }

@@ -5,7 +5,6 @@ package foundry.imgui.impl.renderer.v1;
 /*import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -22,6 +21,7 @@ import foundry.imgui.api.ImGuiMC;
 import foundry.imgui.api.ImGuiSampler;
 import foundry.imgui.api.ImGuiTextureProvider;
 import foundry.imgui.impl.ImGuiMCImpl;
+import foundry.imgui.impl.ImGuiWindowImpl;
 import foundry.imgui.impl.renderer.ImGuiRenderer;
 import imgui.*;
 import imgui.callback.ImPlatformFuncViewport;
@@ -162,15 +162,57 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
     protected static class Data {
         protected GpuTextureView fontTextureView;
         protected GpuTexture fontTexture;
-        protected CompiledRenderPipeline pipelineHandle;
-        protected CachedImguiOrthoBuffer projectionMatrixBuffer;
-        protected List<GpuBuffer> vertexData = new ArrayList<>();
-        protected List<GpuBuffer> indexData = new ArrayList<>();
-        protected int elementSize;
+        protected ViewportData mainViewportData;
         protected List<GpuTextureView> textures = new ArrayList<>();
         //? if >= 1.21.11 {
         /^protected List<com.mojang.blaze3d.textures.GpuSampler> samplers = new ArrayList<>();
         ^///? }
+    }
+
+    /^*
+     * Data class to store implementation specific fields.
+     * Same as {@code ImGui_ImplOpenGL3_Data}.
+     ^/
+    protected static class ViewportData implements ImGuiWindowImpl.RenderViewportData {
+        protected CachedImguiOrthoBuffer projectionMatrixBuffer;
+        protected List<GpuBuffer> vertexData = new ArrayList<>();
+        protected List<GpuBuffer> indexData = new ArrayList<>();
+        protected int elementSize;
+        protected RenderTarget renderTarget;
+
+        public void clearVertexData(final int maxCommands) {
+            final int removeVertices = this.vertexData.size() - maxCommands;
+            if (removeVertices > 0) {
+                final Iterator<GpuBuffer> iterator = this.vertexData.iterator();
+                for (int i = 0; i < removeVertices; i++) {
+                    iterator.next().close();
+                    iterator.remove();
+                }
+            }
+
+            final int removeIndices = this.indexData.size() - maxCommands;
+            if (removeIndices > 0) {
+                final Iterator<GpuBuffer> iterator = this.indexData.iterator();
+                for (int i = 0; i < removeIndices; i++) {
+                    iterator.next().close();
+                    iterator.remove();
+                }
+            }
+        }
+
+        @Override
+        public void setRenderTarget(final RenderTarget target) {
+            this.renderTarget = target;
+        }
+
+        @Override
+        public void free() {
+            this.clearVertexData(0);
+            if (this.projectionMatrixBuffer != null) {
+                this.projectionMatrixBuffer.close();
+                this.projectionMatrixBuffer = null;
+            }
+        }
     }
 
     /^*
@@ -205,26 +247,6 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
         }
     }
 
-    private void clearVertexData(final int maxCommands) {
-        final int removeVertices = this.data.vertexData.size() - maxCommands;
-        if (removeVertices > 0) {
-            final Iterator<GpuBuffer> iterator = this.data.vertexData.iterator();
-            for (int i = 0; i < removeVertices; i++) {
-                iterator.next().close();
-                iterator.remove();
-            }
-        }
-
-        final int removeIndices = this.data.indexData.size() - maxCommands;
-        if (removeIndices > 0) {
-            final Iterator<GpuBuffer> iterator = this.data.indexData.iterator();
-            for (int i = 0; i < removeIndices; i++) {
-                iterator.next().close();
-                iterator.remove();
-            }
-        }
-    }
-
     @Override
     public void init() {
         this.data = this.newData();
@@ -251,25 +273,31 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
 
     //? if >=26.2-snapshot-6 {
     /^@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private void renderDrawData(final ImDrawData drawData, final RenderTarget renderTarget, final Optional<org.joml.Vector4fc> clearColor) {
+    private void renderDrawData(final ImDrawData drawData, final ViewportData data, final Optional<org.joml.Vector4fc> clearColor) {
     ^///? } else {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private void renderDrawData(final ImDrawData drawData, final RenderTarget renderTarget, final OptionalInt clearColor) {
+    private void renderDrawData(final ImDrawData drawData, final ViewportData data, final OptionalInt clearColor) {
         //? }
+
+        final GpuDevice device = RenderSystem.getDevice();
+        final RenderTarget renderTarget = data.renderTarget;
+
+        // Make sure this data is never allocated on another context
+        device.precompilePipeline(PIPELINE, ImGuiRenderImplRenderSystem::getShaderSource);
 
         // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
         final int fbWidth = (int) (drawData.getDisplaySizeX() * drawData.getFramebufferScaleX());
         final int fbHeight = (int) (drawData.getDisplaySizeY() * drawData.getFramebufferScaleY());
         if (fbWidth <= 0 || fbHeight <= 0) {
             this.clearTextures();
-            this.clearVertexData(0);
+            data.clearVertexData(0);
             return;
         }
 
         final int cmdListsCount = drawData.getCmdListsCount();
         if (cmdListsCount <= 0) {
             this.clearTextures();
-            this.clearVertexData(0);
+            data.clearVertexData(0);
             return;
         }
 
@@ -284,23 +312,16 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
         final float clipScaleX = drawData.getFramebufferScaleX(); // (1,1) unless using retina display which are often (2,2)
         final float clipScaleY = drawData.getFramebufferScaleY(); // (1,1) unless using retina display which are often (2,2)
 
-        if (ImDrawData.sizeOfImDrawIdx() != this.data.elementSize) {
-            final Iterator<GpuBuffer> iterator = this.data.indexData.iterator();
+        if (ImDrawData.sizeOfImDrawIdx() != data.elementSize) {
+            final Iterator<GpuBuffer> iterator = data.indexData.iterator();
             while (iterator.hasNext()) {
                 iterator.next().close();
                 iterator.remove();
             }
         }
 
-        this.data.elementSize = ImDrawData.sizeOfImDrawIdx();
-        this.clearVertexData(cmdListsCount);
-
-        if (this.data.projectionMatrixBuffer == null) {
-            this.data.projectionMatrixBuffer = new CachedImguiOrthoBuffer(-1.0F, 1.0F);
-        }
-
-        final GpuDevice device = RenderSystem.getDevice();
-        device.precompilePipeline(PIPELINE, ImGuiRenderImplRenderSystem::getShaderSource);
+        data.elementSize = ImDrawData.sizeOfImDrawIdx();
+        data.clearVertexData(cmdListsCount);
 
         final CommandEncoder commandEncoder = device.createCommandEncoder();
 
@@ -309,12 +330,12 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
             final GpuBuffer vertexBuffer;
             final int vertexBufferSize = drawData.getCmdListVtxBufferSize(n) * ImDrawData.sizeOfImDrawVert();
 
-            if (n >= this.data.vertexData.size()) {
+            if (n >= data.vertexData.size()) {
                 final int index = n;
                 vertexBuffer = device.createBuffer(() -> "ImGui Vertex Buffer " + index, GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_VERTEX, vertexBufferSize);
-                this.data.vertexData.add(vertexBuffer);
+                data.vertexData.add(vertexBuffer);
             } else {
-                final GpuBuffer buffer = this.data.vertexData.get(n);
+                final GpuBuffer buffer = data.vertexData.get(n);
 
                 if (buffer.size() >= vertexBufferSize) {
                     vertexBuffer = buffer;
@@ -322,19 +343,19 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
                     buffer.close();
                     final int index = n;
                     vertexBuffer = device.createBuffer(() -> "ImGui Vertex Buffer " + index, GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_VERTEX, vertexBufferSize);
-                    this.data.vertexData.set(n, vertexBuffer);
+                    data.vertexData.set(n, vertexBuffer);
                 }
             }
 
             final GpuBuffer indexBuffer;
-            final int indexBufferSize = drawData.getCmdListIdxBufferSize(n) * this.data.elementSize;
+            final int indexBufferSize = drawData.getCmdListIdxBufferSize(n) * data.elementSize;
 
-            if (n >= this.data.indexData.size()) {
+            if (n >= data.indexData.size()) {
                 final int index = n;
                 indexBuffer = device.createBuffer(() -> "ImGui Index Buffer " + index, GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_INDEX, indexBufferSize);
-                this.data.indexData.add(indexBuffer);
+                data.indexData.add(indexBuffer);
             } else {
-                final GpuBuffer buffer = this.data.indexData.get(n);
+                final GpuBuffer buffer = data.indexData.get(n);
 
                 if (buffer.size() >= indexBufferSize) {
                     indexBuffer = buffer;
@@ -342,7 +363,7 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
                     buffer.close();
                     final int index = n;
                     indexBuffer = device.createBuffer(() -> "ImGui Index Buffer " + index, GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_INDEX, indexBufferSize);
-                    this.data.indexData.set(n, indexBuffer);
+                    data.indexData.set(n, indexBuffer);
                 }
             }
 
@@ -352,7 +373,10 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
 
         // TODO viewport
 
-        final GpuBufferSlice projectionMatrixBuffer = this.data.projectionMatrixBuffer.getBuffer(L, R, B, T);
+        if (data.projectionMatrixBuffer == null) {
+            data.projectionMatrixBuffer = new CachedImguiOrthoBuffer(-1.0F, 1.0F);
+        }
+        final GpuBufferSlice projectionMatrixBuffer = data.projectionMatrixBuffer.getBuffer(L, R, B, T);
 
         try (final RenderPass renderPass = commandEncoder.createRenderPass(
                 () -> "ImGui",
@@ -362,18 +386,19 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
                 OptionalDouble.empty())) {
             renderPass.setPipeline(PIPELINE);
             renderPass.setUniform("Projection", projectionMatrixBuffer);
+            renderPass.enableScissor(0, 0, fbWidth, fbHeight);
 
             // Render command lists
             for (int n = 0; n < cmdListsCount; n++) {
-                final GpuBuffer vertexBuffer = this.data.vertexData.get(n);
-                final GpuBuffer indexBuffer = this.data.indexData.get(n);
+                final GpuBuffer vertexBuffer = data.vertexData.get(n);
+                final GpuBuffer indexBuffer = data.indexData.get(n);
 
                 //? if >=26.2-snapshot-6 {
                 /^renderPass.setVertexBuffer(0, vertexBuffer.slice());
                 renderPass.setIndexBuffer(indexBuffer, this.data.elementSize == 2 ? com.mojang.blaze3d.IndexType.SHORT : com.mojang.blaze3d.IndexType.INT);
                 ^///? } else {
                 renderPass.setVertexBuffer(0, vertexBuffer);
-                renderPass.setIndexBuffer(indexBuffer, this.data.elementSize == 2 ? VertexFormat.IndexType.SHORT : VertexFormat.IndexType.INT);
+                renderPass.setIndexBuffer(indexBuffer, data.elementSize == 2 ? VertexFormat.IndexType.SHORT : VertexFormat.IndexType.INT);
                 //? }
 
                 final int cmdBufferSize = drawData.getCmdListCmdBufferSize(n);
@@ -448,17 +473,23 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
 
     @Override
     public void renderDrawData(final ImDrawData drawData, final RenderTarget renderTarget) {
+        if (this.data.mainViewportData == null) {
+            this.data.mainViewportData = new ViewportData();
+            this.data.mainViewportData.setRenderTarget(renderTarget);
+        }
         //? if >=26.2-snapshot-6 {
-        /^this.renderDrawData(drawData, renderTarget, Optional.empty());
+        /^this.renderDrawData(drawData, this.data.mainViewportData, Optional.empty());
          ^///? } else {
-        this.renderDrawData(drawData, renderTarget, OptionalInt.empty());
+        this.renderDrawData(drawData, this.data.mainViewportData, OptionalInt.empty());
         //? }
     }
 
     @Override
     public void discard() {
         this.clearTextures();
-        this.clearVertexData(0);
+        if (this.data.mainViewportData != null) {
+            this.data.mainViewportData.clearVertexData(0);
+        }
     }
 
     @Override
@@ -548,12 +579,10 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
     }
 
     private void destroyDeviceObjects() {
-        this.data.pipelineHandle = null;
-        if (this.data.projectionMatrixBuffer != null) {
-            this.data.projectionMatrixBuffer.close();
-            this.data.projectionMatrixBuffer = null;
+        if (this.data.mainViewportData != null) {
+            this.data.mainViewportData.free();
+            this.data.mainViewportData = null;
         }
-        this.clearVertexData(0);
         this.destroyFontsTexture();
     }
 
@@ -574,9 +603,13 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
             //? if >=26.2-snapshot-6 {
             /^final Optional<org.joml.Vector4fc> clearColor = !vp.hasFlags(ImGuiViewportFlags.NoRendererClear) ? Optional.of(CLEAR_COLOR) : Optional.empty();
              ^///? } else {
-            final OptionalInt clearColor = !vp.hasFlags(ImGuiViewportFlags.NoRendererClear) ? OptionalInt.of(0) : OptionalInt.empty();
+            final OptionalInt clearColor = !vp.hasFlags(ImGuiViewportFlags.NoRendererClear) ? OptionalInt.of(0) : OptionalInt.of(0xFFFF00FF);
             //? }
-            ImGuiRenderImplRenderSystem.this.renderDrawData(vp.getDrawData(), ImGuiMCImpl.getMainRenderTarget(), clearColor);
+
+            final ViewportData data = ImGuiWindowImpl.getRenderData(vp, ViewportData::new);
+            if (data != null) {
+                ImGuiRenderImplRenderSystem.this.renderDrawData(vp.getDrawData(), data, clearColor);
+            }
         }
     }
 

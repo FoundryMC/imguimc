@@ -12,11 +12,6 @@ sourceSets {
         compileClasspath += main.compileClasspath
         runtimeClasspath += main.runtimeClasspath
     }
-
-    named("test") {
-        compileClasspath += testmod.compileClasspath
-        runtimeClasspath += testmod.runtimeClasspath
-    }
 }
 
 loom {
@@ -29,7 +24,7 @@ loom {
     runConfigs {
         named("client") {
             client()
-            source(sourceSets.getByName("testmod"))
+            source(sourceSets.named("testmod").get())
         }
 
         remove(runConfigs["server"])
@@ -42,11 +37,45 @@ loom {
         }
     }
 
+    val modid = project.property("mod.id") as String
     mods {
-        register("imguimc-testmod") {
-            sourceSet(sourceSets.getByName("testmod"))
+        // Registering your main mod is standard
+        register(modid) {
+            sourceSet(sourceSets.main.get())
+        }
+        // Register your test mod here
+        register("$modid-testmod") {
+            sourceSet(sourceSets.named("testmod").get())
         }
     }
+}
+
+tasks.named<ProcessResources>("processTestmodResources") {
+    dependsOn(project(":common:${findProperty("deps.common")}").tasks.named("stonecutterGenerate"))
+    dependsOn(configurations.named("commonResources"))
+    from(configurations.named("commonResources"))
+
+    val expandProps = mapOf(
+        "version" to version,
+        "group" to findProperty("mod.group"),
+        "minecraft" to findProperty("mod.mc_dep"),
+        "name" to findProperty("mod.name"),
+        "author" to findProperty("mod.author"),
+        "id" to findProperty("mod.id"),
+        "license" to findProperty("mod.license"),
+        "description" to findProperty("mod.description"),
+        "neoforge" to (findProperty("deps.neoforge") ?: "missing"),
+        "neoforge_loader" to (findProperty("deps.neoforge_loader") ?: "missing"),
+        "fapi" to (findProperty("deps.fabric_api") ?: "missing"),
+        "java" to project.extensions.getByType<JavaPluginExtension>().sourceCompatibility.toString()
+    )
+
+    filesMatching(listOf("pack.mcmeta", "fabric.mod.json", "META-INF/neoforge.mods.toml", "*.mixins.json")) {
+        expand(expandProps)
+    }
+
+    // 4. Track inputs cleanly for cache verification
+    inputs.properties(expandProps)
 }
 
 dependencies {

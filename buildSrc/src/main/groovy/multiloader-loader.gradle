@@ -27,32 +27,6 @@ tasks.named('compileJava', JavaCompile) {
     source(configurations.commonJava)
 }
 
-processTestResources {
-    dependsOn(project(":common:${findProperty("deps.common")}").tasks.getByName("stonecutterGenerate"))
-    dependsOn(configurations.commonResources)
-    from(configurations.commonResources)
-
-    var expandProps = [
-            'version'        : version,
-            'group'          : findProperty("mod.group"), //Else we target the task's group.
-            'minecraft'      : findProperty("mod.mc_dep"),
-            'name'           : findProperty("mod.name"),
-            'author'         : findProperty("mod.author"),
-            'id'             : findProperty("mod.id"),
-            'license'        : findProperty("mod.license"),
-            'description'    : findProperty("mod.description"),
-            'neoforge'       : findProperty("deps.neoforge") ?: "missing",
-            'neoforge_loader': findProperty("deps.neoforge_loader") ?: "missing",
-            'fapi'           : findProperty("deps.fabric_api") ?: "missing",
-            'java'           : java.sourceCompatibility
-    ]
-
-    filesMatching(['pack.mcmeta', 'fabric.mod.json', 'META-INF/neoforge.mods.toml', '*.mixins.json']) {
-        expand expandProps
-    }
-    inputs.properties(expandProps)
-}
-
 processResources {
     dependsOn(project(":common:${findProperty("deps.common")}").tasks.getByName("stonecutterGenerate"))
     dependsOn(configurations.commonResources)

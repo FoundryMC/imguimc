@@ -3,6 +3,7 @@ package foundry.imgui.impl;
 import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
 import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.imgui.impl.font.ImGuiFontManager;
 import foundry.imgui.impl.platform.ImGuiMCPlatform;
@@ -14,12 +15,13 @@ import imgui.flag.ImGuiConfigFlags;
 import imgui.internal.ImGuiContext;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.ApiStatus;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @ApiStatus.Internal
 public class ImGuiHandler {
 
-    private final long mainWindow;
+    private final Window mainWindow;
     private final ImGuiWindowImpl windowImpl;
     private final ImGuiRenderer rendererImpl;
     private final ImGuiFontManager fontManager;
@@ -29,7 +31,7 @@ public class ImGuiHandler {
     private final AtomicBoolean fontsDirty;
     private long frame;
 
-    public ImGuiHandler(final long mainWindow) {
+    public ImGuiHandler(final Window mainWindow) {
         this.mainWindow = mainWindow;
         this.windowImpl = new ImGuiWindowImpl(this);
         this.rendererImpl = ImGuiMCPlatform.INSTANCE.createRenderer();
@@ -45,7 +47,18 @@ public class ImGuiHandler {
             this.fontsDirty = new AtomicBoolean();
             ImGuiMCPlatform.INSTANCE.imGuiLoadPre();
             this.rendererImpl.init();
+            //? if >=1.21.6 {
+            /*final String backendName = RenderSystem.getDevice().getBackendName().toLowerCase(Locale.ROOT);
+            if (backendName.contains("vulkan")) {
+                this.windowImpl.initForVulkan(mainWindow, true);
+            } else if (backendName.contains("opengl")) {
+                this.windowImpl.initForOpenGL(mainWindow, true);
+            } else {
+                this.windowImpl.initForOther(mainWindow, true);
+            }
+            *///? } else {
             this.windowImpl.initForOpenGL(mainWindow, true);
+             //? }
             ImGuiMCPlatform.INSTANCE.imGuiLoadPost();
 
             // TODO style sheet init event
@@ -129,21 +142,8 @@ public class ImGuiHandler {
 
             final RenderTarget renderTarget = ImGuiMCImpl.getMainRenderTarget();
 
-            //? if >=1.21.6 {
-            /*final com.mojang.blaze3d.textures.GpuTextureView view = renderTarget.getColorTextureView();
-            final int framebufferWidth = view.getWidth(0);
-            final int framebufferHeight = view.getHeight(0);
-            *///? } else {
-            final int framebufferWidth = renderTarget.width;
-            final int framebufferHeight = renderTarget.height;
-            //? }
-
             ImGui.render();
-            if (this.windowImpl.isCorrectSize(framebufferWidth, framebufferHeight)) {
-                this.rendererImpl.renderDrawData(ImGui.getDrawData(), renderTarget);
-            } else {
-                this.rendererImpl.discard();
-            }
+            this.rendererImpl.renderDrawData(ImGui.getDrawData(), renderTarget);
 
             if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
                 final long backupWindowPtr = glfwGetCurrentContext();
@@ -169,7 +169,7 @@ public class ImGuiHandler {
     }
 
     public long getWindow() {
-        return this.mainWindow;
+        return ImGuiMCImpl.getWindowHandle(this.mainWindow);
     }
 
     public long getFrame() {

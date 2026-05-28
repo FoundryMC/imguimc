@@ -1,6 +1,7 @@
 package foundry.imgui.impl;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.Window;
 import foundry.imgui.api.ImGuiMC;
 import foundry.imgui.impl.platform.ImGuiMCPlatform;
 import net.minecraft.client.Minecraft;
@@ -20,14 +21,8 @@ public final class ImGuiMCImpl {
     }
 
     public static void initHandler() {
-        //? if >=1.21.9 {
-        /*final long window = Minecraft.getInstance().getWindow().handle();
-        *///? } else {
-        final long window = Minecraft.getInstance().getWindow().getWindow();
-         //? }
-
         try {
-            handler = new ImGuiHandler(window);
+            handler = new ImGuiHandler(Minecraft.getInstance().getWindow());
             ImGuiMCPlatform.INSTANCE.afterImGuiLoad();
         } catch (final Throwable t) {
             LOGGER.error("Failed to load ImGui, disabling", t);
@@ -44,6 +39,14 @@ public final class ImGuiMCImpl {
         /*return Minecraft.getInstance().gameRenderer.mainRenderTarget();
         *///? } else {
         return Minecraft.getInstance().getMainRenderTarget();
+         //? }
+    }
+
+    public static long getWindowHandle(final Window window) {
+        //? if >=1.21.9 {
+        /*return window.handle();
+        *///? } else {
+        return window.getWindow();
          //? }
     }
 }
