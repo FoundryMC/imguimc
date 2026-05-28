@@ -22,39 +22,21 @@ public interface ImGuiMCEvents {
      * @since 1.1.0
      * @deprecated Use {@link #imGuiLoadPre(ImGuiLoadEvents.Pre)}
      */
-    @ApiStatus.ScheduledForRemoval(inVersion = "2.0.0")
+    @ApiStatus.ScheduledForRemoval(inVersion = "3.0.0")
     @Deprecated
     void onImGuiLoad(ImGuiLoadEvent event);
 
     /**
-     * @since 1.3.0
+     * @since 2.0.0
      */
     void imGuiLoadPre(ImGuiLoadEvents.Pre event);
 
     /**
-     * @since 1.3.0
+     * @since 2.0.0
      */
     void imGuiLoadPost(ImGuiLoadEvents.Post event);
 
     void onRegisterImGuiFonts(RegisterImGuiFontsEvent event);
-
-    /**
-     * @deprecated Use {@link #preRenderImGuiEvent(RenderImGuiEvents.Pre)}
-     */
-    @ApiStatus.ScheduledForRemoval(inVersion = "2.0.0")
-    @Deprecated
-    default void preRenderImGuiEvents(RenderImGuiEvents.Pre event) {
-        this.preRenderImGuiEvent(event);
-    }
-
-    /**
-     * @deprecated Use {@link #postRenderImGuiEvent(RenderImGuiEvents.Post)}
-     */
-    @ApiStatus.ScheduledForRemoval(inVersion = "2.0.0")
-    @Deprecated
-    default void postRenderImGuiEvents(RenderImGuiEvents.Post event) {
-        this.postRenderImGuiEvent(event);
-    }
 
     /**
      * @since 1.2.0

@@ -7,7 +7,7 @@ import net.fabricmc.fabric.api.event.EventFactory;
 /**
  * Fired before and after ImGui loads successfully.
  *
- * @since 1.3.0
+ * @since 2.0.0
  */
 public final class ImGuiLoadEventsFabric {
 

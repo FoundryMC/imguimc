@@ -8,7 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 /**
  * Fired before and after ImGui loads successfully.
  *
- * @since 1.3.0
+ * @since 2.0.0
  */
 public abstract class ImGuiLoadEventsNeoforge extends Event implements IModBusEvent {
 

@@ -12,7 +12,7 @@ import org.jetbrains.annotations.ApiStatus;
  * @since 1.1.0
  * @deprecated Use {@link ImGuiLoadEventsFabric#POST}
  */
-@ApiStatus.ScheduledForRemoval(inVersion = "2.0.0")
+@ApiStatus.ScheduledForRemoval(inVersion = "3.0.0")
 @Deprecated
 public interface ImGuiLoadEventFabric extends ImGuiLoadEvent {
 
