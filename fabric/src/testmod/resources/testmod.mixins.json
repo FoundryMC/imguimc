@@ -4,7 +4,10 @@
   "package": "foundry.imguitest.mixin",
   "refmap": "testmod.refmap.json",
   "compatibilityLevel": "JAVA_21",
-  "client": [],
+  "client": [
+    "GlDeviceMixin",
+    "MutableBufferStorageMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

@@ -2,6 +2,7 @@ package foundry.imgui.impl;
 
 import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
 import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -135,21 +136,15 @@ public class ImGuiHandler {
             }
 
             this.start();
-
+            this.active.set(false);
             ImGuiMCPlatform.INSTANCE.drawImGuiPost();
 
-            this.active.set(false);
-
-            final RenderTarget renderTarget = ImGuiMCImpl.getMainRenderTarget();
-
             ImGui.render();
-            this.rendererImpl.renderDrawData(ImGui.getDrawData(), renderTarget);
+            this.rendererImpl.renderDrawData(ImGui.getDrawData(), ImGuiMCImpl.getMainRenderTarget());
 
             if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
-                final long backupWindowPtr = glfwGetCurrentContext();
                 ImGui.updatePlatformWindows();
                 ImGui.renderPlatformWindowsDefault();
-                glfwMakeContextCurrent(backupWindowPtr);
             }
         } finally {
             ImGuiStateStack.forcePop();

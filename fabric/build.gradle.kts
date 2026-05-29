@@ -1,4 +1,6 @@
 import org.gradle.internal.extensions.stdlib.capitalized
+import org.gradle.internal.fingerprint.classpath.impl.ClasspathFingerprintingStrategy.compileClasspath
+import org.gradle.internal.fingerprint.classpath.impl.ClasspathFingerprintingStrategy.runtimeClasspath
 
 plugins {
     id("net.fabricmc.fabric-loom")
@@ -15,6 +17,7 @@ sourceSets {
 }
 
 loom {
+    accessWidenerPath.set(project(":fabric").file("src/testmod/resources/testmod.classtweaker"))
     fabricModJsonPath = project(":fabric").file("src/main/resources/fabric.mod.json")
 
     decompilerOptions.named("vineflower") {
@@ -25,6 +28,9 @@ loom {
         named("client") {
             client()
             source(sourceSets.named("testmod").get())
+
+            environmentVariable("ENABLE_VULKAN_RENDERDOC_CAPTURE", "1")
+            environmentVariable("LD_PRELOAD", "librenderdoc.so")
         }
 
         remove(runConfigs["server"])
@@ -76,6 +82,11 @@ tasks.named<ProcessResources>("processTestmodResources") {
 
     // 4. Track inputs cleanly for cache verification
     inputs.properties(expandProps)
+}
+
+tasks.register<Jar>("testmodJar") {
+    from(sourceSets["testmod"].output)
+    archiveClassifier.set("testmod")
 }
 
 dependencies {

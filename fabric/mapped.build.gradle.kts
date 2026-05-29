@@ -58,7 +58,6 @@ loom {
 
 tasks.named<ProcessResources>("processTestmodResources") {
     dependsOn(project(":common:${findProperty("deps.common")}").tasks.named("stonecutterGenerate"))
-    dependsOn(configurations.named("commonResources"))
     from(configurations.named("commonResources"))
 
     val expandProps = mapOf(
@@ -82,6 +81,11 @@ tasks.named<ProcessResources>("processTestmodResources") {
 
     // 4. Track inputs cleanly for cache verification
     inputs.properties(expandProps)
+}
+
+tasks.register<Jar>("testmodJar") {
+    from(sourceSets["testmod"].output)
+    archiveClassifier.set("testmod")
 }
 
 repositories {

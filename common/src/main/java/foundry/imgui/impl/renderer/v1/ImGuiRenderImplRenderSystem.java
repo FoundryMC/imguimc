@@ -5,8 +5,10 @@ package foundry.imgui.impl.renderer.v1;
 /*import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
@@ -69,8 +71,8 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
         }
 
         VERTEX_FORMAT = VertexFormat.builder()
-                .add("Position", posElement)
-                .add("UV", com.mojang.blaze3d.vertex.VertexFormatElement.UV0)
+                .add("Position2D", posElement)
+                .add("UV0", com.mojang.blaze3d.vertex.VertexFormatElement.UV0)
                 .add("Color", com.mojang.blaze3d.vertex.VertexFormatElement.COLOR)
                 .build();
         //? }
@@ -78,8 +80,8 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
 
     private static final String VERTEX_SHADER = """
             #version 410 core
-            layout (location = 0) in vec2 Position;
-            layout (location = 1) in vec2 UV;
+            layout (location = 0) in vec2 Position2D;
+            layout (location = 1) in vec2 UV0;
             layout (location = 2) in vec4 Color;
             layout(std140) uniform Projection {
                 mat4 ProjMtx;
@@ -88,9 +90,9 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
             out vec4 Frag_Color;
             void main()
             {
-                Frag_UV = UV;
+                Frag_UV = UV0;
                 Frag_Color = Color;
-                gl_Position = ProjMtx * vec4(Position.xy,0,1);
+                gl_Position = ProjMtx * vec4(Position2D.xy,0,1);
             }
             """;
     private static final String FRAGMENT_SHADER = """
@@ -135,6 +137,7 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
             .withPrimitiveTopology(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES)
             ^///? } else {
             .withVertexFormat(VERTEX_FORMAT, VertexFormat.Mode.TRIANGLES)
+            .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
             //? }
             .build();
 
@@ -273,10 +276,10 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
 
     //? if >=26.2-snapshot-6 {
     /^@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private void renderDrawData(final ImDrawData drawData, final ViewportData data, final Optional<org.joml.Vector4fc> clearColor) {
+    private void renderDrawData(final ImDrawData drawData, final ViewportData data, final Optional<org.joml.Vector4fc> clearColor, final OptionalDouble clearDepth) {
     ^///? } else {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private void renderDrawData(final ImDrawData drawData, final ViewportData data, final OptionalInt clearColor) {
+    private void renderDrawData(final ImDrawData drawData, final ViewportData data, final OptionalInt clearColor, final OptionalDouble clearDepth) {
         //? }
 
         final GpuDevice device = RenderSystem.getDevice();
@@ -381,12 +384,9 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
         try (final RenderPass renderPass = commandEncoder.createRenderPass(
                 () -> "ImGui",
                 renderTarget.getColorTextureView(),
-                clearColor,
-                renderTarget.getDepthTextureView(),
-                OptionalDouble.empty())) {
+                clearColor)) {
             renderPass.setPipeline(PIPELINE);
             renderPass.setUniform("Projection", projectionMatrixBuffer);
-            renderPass.enableScissor(0, 0, fbWidth, fbHeight);
 
             // Render command lists
             for (int n = 0; n < cmdListsCount; n++) {
@@ -480,7 +480,7 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
         //? if >=26.2-snapshot-6 {
         /^this.renderDrawData(drawData, this.data.mainViewportData, Optional.empty());
          ^///? } else {
-        this.renderDrawData(drawData, this.data.mainViewportData, OptionalInt.empty());
+        this.renderDrawData(drawData, this.data.mainViewportData, OptionalInt.empty(), OptionalDouble.empty());
         //? }
     }
 
@@ -601,14 +601,14 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
         @Override
         public void accept(final ImGuiViewport vp) {
             //? if >=26.2-snapshot-6 {
-            /^final Optional<org.joml.Vector4fc> clearColor = !vp.hasFlags(ImGuiViewportFlags.NoRendererClear) ? Optional.of(CLEAR_COLOR) : Optional.empty();
+            /^final Optional<org.joml.Vector4fc> clearColor = vp.hasFlags(ImGuiViewportFlags.NoRendererClear) ? Optional.empty() : Optional.of(CLEAR_COLOR);
              ^///? } else {
-            final OptionalInt clearColor = !vp.hasFlags(ImGuiViewportFlags.NoRendererClear) ? OptionalInt.of(0) : OptionalInt.of(0xFFFF00FF);
+            final OptionalInt clearColor = vp.hasFlags(ImGuiViewportFlags.NoRendererClear) ? OptionalInt.of(0xFFFF00FF) : OptionalInt.of(0);
             //? }
 
             final ViewportData data = ImGuiWindowImpl.getRenderData(vp, ViewportData::new);
             if (data != null) {
-                ImGuiRenderImplRenderSystem.this.renderDrawData(vp.getDrawData(), data, clearColor);
+                ImGuiRenderImplRenderSystem.this.renderDrawData(vp.getDrawData(), data, clearColor, OptionalDouble.of(1.0));
             }
         }
     }

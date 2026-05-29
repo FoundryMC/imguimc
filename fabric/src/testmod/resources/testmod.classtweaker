@@ -1,0 +1,4 @@
+classTweaker  v1  official
+accessible field com/mojang/blaze3d/opengl/GlBuffer handle I
+accessible method com/mojang/blaze3d/opengl/DirectStateAccess bufferSubData (IJLjava/nio/ByteBuffer;I)V
+accessible method com/mojang/blaze3d/opengl/GlBuffer$GlMappedView <init> (Ljava/lang/Runnable;Lcom/mojang/blaze3d/opengl/GlBuffer;Ljava/nio/ByteBuffer;)V
