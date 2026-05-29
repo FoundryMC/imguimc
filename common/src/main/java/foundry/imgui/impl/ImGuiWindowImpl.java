@@ -45,7 +45,7 @@ public class ImGuiWindowImpl {
         protected long window = -1;
         //? if >= 26.1 {
         /*protected com.mojang.blaze3d.systems.GpuBackend backend = null;
-        *///? }
+         *///? }
         protected GlfwClientApi clientApi = GlfwClientApi.UNKNOWN;
         protected double time = 0.0;
         protected long mouseWindow = -1;
@@ -574,7 +574,7 @@ public class ImGuiWindowImpl {
         this.data.window = ImGuiMCImpl.getWindowHandle(window);
         //? if >= 26.1 {
         /*this.data.backend = window.backend();
-        *///? }
+         *///? }
         this.data.time = 0.0;
         this.data.isWayland = isWayland();
 
@@ -952,10 +952,12 @@ public class ImGuiWindowImpl {
             return 1.0f;
         }
         if (glfwHasPerMonitorDpi) {
-            final float[] xScale = new float[1];
-            final float[] yScale = new float[1];
-            glfwGetMonitorContentScale(monitor, xScale, yScale);
-            return xScale[0];
+            try (final MemoryStack stack = MemoryStack.stackPush()) {
+                final FloatBuffer xScale = stack.mallocFloat(1);
+                final FloatBuffer yScale = stack.mallocFloat(1);
+                glfwGetMonitorContentScale(monitor, xScale, yScale);
+                return Math.max(xScale.get(0), yScale.get(0));
+            }
         }
         return 1.0f;
     }
@@ -1528,7 +1530,7 @@ public class ImGuiWindowImpl {
 
             //? if >= 1.21.5 {
             /*viewportData.getRenderTarget().blitToScreen();
-            *///? } else {
+             *///? } else {
             viewportData.getRenderTarget().blitToScreen((int) vp.getSizeX(), (int) vp.getSizeY());
             //? }
 
