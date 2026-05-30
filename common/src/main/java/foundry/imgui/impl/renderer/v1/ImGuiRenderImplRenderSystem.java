@@ -212,13 +212,9 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
             final int width = (int) viewport.getSizeX();
             final int height = (int) viewport.getSizeY();
             if (this.renderTarget == null) {
-                this.renderTarget = new MainTarget(width, height);
+                this.renderTarget = ImGuiMCImpl.createRenderTarget(width, height, false);
             } else if (this.renderTarget.width != width || this.renderTarget.height != height) {
-                //? if >= 1.21.2 {
-                this.renderTarget.resize(width, height);
-                //? } else {
-                /^this.renderTarget.resize(width, height, Minecraft.ON_OSX);
-                 ^///? }
+                ImGuiMCImpl.resizeRenderTarget(this.renderTarget, width, height);
             }
             this.ownedRenderTarget = true;
         }

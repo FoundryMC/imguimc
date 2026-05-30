@@ -42,21 +42,8 @@ public class MouseHandlerMixin {
 
     // REI calls these on another thread for some reason, so it's possible other mods may do the same thing
 
-    @Inject(method = "xpos", at = @At("HEAD"), cancellable = true)
-    public void cancelMouseX(final CallbackInfoReturnable<Double> cir) {
-        if (!RenderSystem.isOnRenderThread()) {
-            return;
-        }
-
-        try (final ImGuiMC.ActiveContext ctx = ImGuiMC.withImGui()) {
-            if (ctx != null && ctx.io().getWantCaptureMouse()) {
-                cir.setReturnValue(Double.MIN_VALUE);
-            }
-        }
-    }
-
-    @Inject(method = "ypos", at = @At("HEAD"), cancellable = true)
-    public void cancelMouseY(final CallbackInfoReturnable<Double> cir) {
+    @Inject(method = {"xpos", "ypos"}, at = @At("HEAD"), cancellable = true)
+    public void cancelMouse(final CallbackInfoReturnable<Double> cir) {
         if (!RenderSystem.isOnRenderThread()) {
             return;
         }

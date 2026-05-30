@@ -1,5 +1,6 @@
 package foundry.imgui.api;
 
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.imgui.api.event.RegisterImGuiFontsEvent;
 import foundry.imgui.impl.ActiveContextImpl;
@@ -102,6 +103,43 @@ public interface ImGuiMC {
         return (ImGuiTextureProvider) texture;
     }
 
+    /**
+     * Converts the specified render target color buffer into a texture provider.
+     *
+     * @return The {@link ImGuiTextureProvider} for texture calls
+     * @since 2.0.0
+     */
+    @Contract(value = "null->fail", pure = true)
+    static ImGuiTextureProvider getColorTexture(final RenderTarget renderTarget) {
+        //? if >=1.21.6 {
+        /*return getTexture(renderTarget.getColorTextureView());
+        *///? } else if >=1.21.5 {
+        /*return new foundry.imgui.impl.renderer.v0.RawOpenGlTextureProvider(((com.mojang.blaze3d.opengl.GlTexture) renderTarget.getColorTexture()).glId());
+        *///? } else {
+        return new foundry.imgui.impl.renderer.v0.RawOpenGlTextureProvider(renderTarget.getColorTextureId());
+        //? }
+    }
+
+    /**
+     * Converts the specified render target depth buffer into a texture provider.
+     *
+     * @return The {@link ImGuiTextureProvider} for texture calls or <code>null</code> if the render target doesn't have a depth buffer
+     * @since 2.0.0
+     */
+    @Contract(value = "null->fail", pure = true)
+    static @Nullable ImGuiTextureProvider getDepthTexture(final RenderTarget renderTarget) {
+        if (!renderTarget.useDepth) {
+            return null;
+        }
+        //? if >=1.21.6 {
+        /*return getTexture(renderTarget.getDepthTextureView());
+        *///? } else if >=1.21.5 {
+        /*return new foundry.imgui.impl.renderer.v0.RawOpenGlTextureProvider(((com.mojang.blaze3d.opengl.GlTexture) renderTarget.getDepthTexture()).glId());
+        *///? } else {
+        return new foundry.imgui.impl.renderer.v0.RawOpenGlTextureProvider(renderTarget.getDepthTextureId());
+        //? }
+    }
+
     //? if >= 1.21.6 {
 
     /*/^*
@@ -176,7 +214,7 @@ public interface ImGuiMC {
         return getFont(fontName, style.isBold(), style.isItalic());
         *///? } else {
         return getFont(Style.DEFAULT_FONT.equals(style.getFont()) ? null : style.getFont(), style.isBold(), style.isItalic());
-         //? }
+        //? }
     }
 
     /**
@@ -250,10 +288,124 @@ public interface ImGuiMC {
             final float uv1X,
             final float uv1Y) {
         final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, null);
-        ImGui.imageWithBg(imGuiId, sizeX, sizeY, uv0X, uv0Y, uv1X, uv1Y);
+        ImGui.image(imGuiId, sizeX, sizeY, uv0X, uv0Y, uv1X, uv1Y);
     }
 
     static void image(
+            final ImGuiTextureProvider userTexture,
+            @Nullable final ImGuiSampler sampler,
+            final ImVec2 size) {
+        final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, sampler);
+        ImGui.imageWithBg(imGuiId, size);
+    }
+
+    static void image(
+            final ImGuiTextureProvider userTexture,
+            @Nullable final ImGuiSampler sampler,
+            final float sizeX,
+            final float sizeY) {
+        final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, sampler);
+        ImGui.image(imGuiId, sizeX, sizeY);
+    }
+
+    static void image(
+            final ImGuiTextureProvider userTexture,
+            @Nullable final ImGuiSampler sampler,
+            final ImVec2 size,
+            final ImVec2 uv0) {
+        final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, sampler);
+        ImGui.image(imGuiId, size, uv0);
+    }
+
+    static void image(
+            final ImGuiTextureProvider userTexture,
+            @Nullable final ImGuiSampler sampler,
+            final float sizeX,
+            final float sizeY,
+            final float uv0X,
+            final float uv0Y) {
+        final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, sampler);
+        ImGui.image(imGuiId, sizeX, sizeY, uv0X, uv0Y);
+    }
+
+    static void image(
+            final ImGuiTextureProvider userTexture,
+            @Nullable final ImGuiSampler sampler,
+            final ImVec2 size,
+            final ImVec2 uv0,
+            final ImVec2 uv1) {
+        final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, sampler);
+        ImGui.image(imGuiId, size, uv0, uv1);
+    }
+
+    static void image(
+            final ImGuiTextureProvider userTexture,
+            @Nullable final ImGuiSampler sampler,
+            final float sizeX,
+            final float sizeY,
+            final float uv0X,
+            final float uv0Y,
+            final float uv1X,
+            final float uv1Y) {
+        final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, sampler);
+        ImGui.image(imGuiId, sizeX, sizeY, uv0X, uv0Y, uv1X, uv1Y);
+    }
+
+    static void imageWithBg(
+            final ImGuiTextureProvider userTexture,
+            final ImVec2 size) {
+        final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, null);
+        ImGui.imageWithBg(imGuiId, size);
+    }
+
+    static void imageWithBg(
+            final ImGuiTextureProvider userTexture,
+            final float sizeX,
+            final float sizeY) {
+        final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, null);
+        ImGui.imageWithBg(imGuiId, sizeX, sizeY);
+    }
+
+    static void imageWithBg(
+            final ImGuiTextureProvider userTexture,
+            final ImVec2 size,
+            final ImVec2 uv0) {
+        final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, null);
+        ImGui.imageWithBg(imGuiId, size, uv0);
+    }
+
+    static void imageWithBg(
+            final ImGuiTextureProvider userTexture,
+            final float sizeX,
+            final float sizeY,
+            final float uv0X,
+            final float uv0Y) {
+        final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, null);
+        ImGui.imageWithBg(imGuiId, sizeX, sizeY, uv0X, uv0Y);
+    }
+
+    static void imageWithBg(
+            final ImGuiTextureProvider userTexture,
+            final ImVec2 size,
+            final ImVec2 uv0,
+            final ImVec2 uv1) {
+        final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, null);
+        ImGui.imageWithBg(imGuiId, size, uv0, uv1);
+    }
+
+    static void imageWithBg(
+            final ImGuiTextureProvider userTexture,
+            final float sizeX,
+            final float sizeY,
+            final float uv0X,
+            final float uv0Y,
+            final float uv1X,
+            final float uv1Y) {
+        final long imGuiId = ImGuiMCImpl.handler.getRenderer().getImGuiId(userTexture, null);
+        ImGui.imageWithBg(imGuiId, sizeX, sizeY, uv0X, uv0Y, uv1X, uv1Y);
+    }
+
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             final ImVec2 size,
             final ImVec2 uv0,
@@ -263,7 +415,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, size, uv0, uv1, tintCol);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             final float sizeX,
             final float sizeY,
@@ -279,7 +431,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, sizeX, sizeY, uv0X, uv0Y, uv1X, uv1Y, tintColX, tintColY, tintColZ, tintColW);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             final ImVec2 size,
             final ImVec2 uv0,
@@ -290,7 +442,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, size, uv0, uv1, tintCol, borderCol);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             final float sizeX,
             final float sizeY,
@@ -310,7 +462,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, sizeX, sizeY, uv0X, uv0Y, uv1X, uv1Y, tintColX, tintColY, tintColZ, tintColW, borderColX, borderColY, borderColZ, borderColW);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             @Nullable final ImGuiSampler sampler,
             final ImVec2 size) {
@@ -318,7 +470,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, size);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             @Nullable final ImGuiSampler sampler,
             final float sizeX,
@@ -327,7 +479,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, sizeX, sizeY);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             @Nullable final ImGuiSampler sampler,
             final ImVec2 size,
@@ -336,7 +488,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, size, uv0);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             @Nullable final ImGuiSampler sampler,
             final float sizeX,
@@ -347,7 +499,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, sizeX, sizeY, uv0X, uv0Y);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             @Nullable final ImGuiSampler sampler,
             final ImVec2 size,
@@ -357,7 +509,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, size, uv0, uv1);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             @Nullable final ImGuiSampler sampler,
             final float sizeX,
@@ -370,7 +522,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, sizeX, sizeY, uv0X, uv0Y, uv1X, uv1Y);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             @Nullable final ImGuiSampler sampler,
             final ImVec2 size,
@@ -381,7 +533,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, size, uv0, uv1, tintCol);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             @Nullable final ImGuiSampler sampler,
             final float sizeX,
@@ -398,7 +550,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, sizeX, sizeY, uv0X, uv0Y, uv1X, uv1Y, tintColX, tintColY, tintColZ, tintColW);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             @Nullable final ImGuiSampler sampler,
             final ImVec2 size,
@@ -410,7 +562,7 @@ public interface ImGuiMC {
         ImGui.imageWithBg(imGuiId, size, uv0, uv1, tintCol, borderCol);
     }
 
-    static void image(
+    static void imageWithBg(
             final ImGuiTextureProvider userTexture,
             @Nullable final ImGuiSampler sampler,
             final float sizeX,

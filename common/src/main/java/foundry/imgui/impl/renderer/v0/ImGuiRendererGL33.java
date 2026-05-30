@@ -8,6 +8,7 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import foundry.imgui.api.ImGuiSampler;
 import foundry.imgui.api.ImGuiTextureProvider;
+import foundry.imgui.impl.ImGuiMCImpl;
 import foundry.imgui.impl.ImGuiWindowImpl;
 import foundry.imgui.impl.renderer.ImGuiRenderer;
 import imgui.*;
@@ -642,20 +643,10 @@ public class ImGuiRendererGL33 implements ImGuiRenderer {
             final int width = (int) viewport.getSizeX();
             final int height = (int) viewport.getSizeY();
             if (this.renderTarget == null) {
-                //? if >=1.21.5 {
-                /*this.renderTarget = new TextureTarget("ImGui Window", width, height, false);
-                *///? } else if >=1.21.2 {
-                /*this.renderTarget = new TextureTarget(width, height, false);
-                 *///? } else {
-                this.renderTarget = new TextureTarget(width, height, false, net.minecraft.client.Minecraft.ON_OSX);
-                //? }
+                this.renderTarget = ImGuiMCImpl.createRenderTarget(width, height, false);
                 this.ownedRenderTarget = true;
             } else if (this.ownedRenderTarget && (this.renderTarget.width != width || this.renderTarget.height != height)) {
-                //? if >=1.21.2 {
-                /*this.renderTarget.resize(width, height);
-                 *///? } else {
-                this.renderTarget.resize(width, height, net.minecraft.client.Minecraft.ON_OSX);
-                //? }
+                ImGuiMCImpl.resizeRenderTarget(this.renderTarget, width, height);
             }
         }
 
@@ -707,6 +698,7 @@ public class ImGuiRendererGL33 implements ImGuiRenderer {
                 *///? } else {
                 renderTarget.bindWrite(false);
                 if (!vp.hasFlags(ImGuiViewportFlags.NoRendererClear)) {
+                    com.mojang.blaze3d.platform.GlStateManager._clearColor(0,0,0,1);
                     //? if >=1.21.2 {
                     /*com.mojang.blaze3d.platform.GlStateManager._clear(GL_COLOR_BUFFER_BIT);
                      *///? } else {
