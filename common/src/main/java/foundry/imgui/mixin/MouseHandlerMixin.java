@@ -2,6 +2,7 @@ package foundry.imgui.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.imgui.api.ImGuiMC;
+import foundry.imgui.impl.ImGuiMCImpl;
 import imgui.ImGui;
 import net.minecraft.client.MouseHandler;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,7 +17,7 @@ public class MouseHandlerMixin {
     @Inject(method = {"onPress", "onButton"}, at = @At("HEAD"), cancellable = true)
     public void mouseButtonCallback(final CallbackInfo ci) {
         try (final ImGuiMC.ActiveContext ctx = ImGuiMC.withImGui()) {
-            if (ctx != null && ctx.io().getWantCaptureMouse()) {
+            if (ctx != null && ctx.io().getWantCaptureMouse() && ImGuiMCImpl.handler.getMainViewport().isCaptureMouse()) {
                 ci.cancel();
             }
         }
@@ -25,7 +26,7 @@ public class MouseHandlerMixin {
     @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
     public void scrollCallback(final CallbackInfo ci) {
         try (final ImGuiMC.ActiveContext ctx = ImGuiMC.withImGui()) {
-            if (ctx != null && ctx.io().getWantCaptureMouse()) {
+            if (ctx != null && ctx.io().getWantCaptureMouse() && ImGuiMCImpl.handler.getMainViewport().isCaptureMouse()) {
                 ci.cancel();
             }
         }
@@ -49,7 +50,7 @@ public class MouseHandlerMixin {
         }
 
         try (final ImGuiMC.ActiveContext ctx = ImGuiMC.withImGui()) {
-            if (ctx != null && ctx.io().getWantCaptureMouse()) {
+            if (ctx != null && ctx.io().getWantCaptureMouse() && ImGuiMCImpl.handler.getMainViewport().isCaptureMouse()) {
                 cir.setReturnValue(Double.MIN_VALUE);
             }
         }

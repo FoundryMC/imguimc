@@ -30,6 +30,9 @@ public class ImGuiHandler {
     private final ImPlotContext imPlotContext;
     private final AtomicBoolean active;
     private final AtomicBoolean fontsDirty;
+    private final AtomicBoolean wantCaptureMainFramebuffer;
+    private final MainImGuiViewport mainViewport;
+
     private long frame;
 
     public ImGuiHandler(final Window mainWindow) {
@@ -46,6 +49,8 @@ public class ImGuiHandler {
             imPlotContext = ImPlot.createContext();
             this.active = new AtomicBoolean();
             this.fontsDirty = new AtomicBoolean();
+            this.wantCaptureMainFramebuffer = new AtomicBoolean();
+            this.mainViewport = new MainImGuiViewport();
             ImGuiMCPlatform.INSTANCE.imGuiLoadPre();
             this.rendererImpl.init();
             //? if >=1.21.6 {
@@ -120,7 +125,7 @@ public class ImGuiHandler {
                 this.rendererImpl.recreateFontsTexture();
             }
             this.rendererImpl.newFrame();
-            this.windowImpl.newFrame(ImGuiMCImpl.getMainRenderTarget());
+            this.windowImpl.newFrame(this.mainViewport.getRenderTarget());
             ImGui.getStyle().setFontScaleMain((float) Math.max(ImGuiFontManager.getFontScale(), Minecraft.getInstance().getWindow().getGuiScale() / 2.0));
             ImGui.newFrame();
 
@@ -143,11 +148,16 @@ public class ImGuiHandler {
             this.active.set(false);
             ImGuiMCPlatform.INSTANCE.drawImGuiPost();
 
+            final Window window = Minecraft.getInstance().getWindow();
+            this.mainViewport.update(ImGuiMCImpl.getMainRenderTarget(), window, this.wantCaptureMainFramebuffer.get());
+
+            final RenderTarget renderTarget = this.mainViewport.getRenderTarget();
             ImGui.render();
-            final RenderTarget renderTarget = ImGuiMCImpl.getMainRenderTarget();
             this.rendererImpl.renderDrawData(ImGui.getDrawData(), renderTarget);
             this.rendererImpl.renderPlatformWindows(renderTarget);
             this.rendererImpl.postDraw();
+
+            this.mainViewport.setCaptured(this.wantCaptureMainFramebuffer.getAndSet(false) && !window.isFullscreen());
         } finally {
             this.stop();
         }
@@ -212,8 +222,16 @@ public class ImGuiHandler {
         //? }
     }
 
+    public MainImGuiViewport getMainViewport() {
+        return this.mainViewport;
+    }
+
     public void updateFonts() {
         this.fontsDirty.set(true);
+    }
+
+    public void setWantCaptureMainFramebuffer() {
+        this.wantCaptureMainFramebuffer.set(true);
     }
 
     public ImGuiRenderer getRenderer() {

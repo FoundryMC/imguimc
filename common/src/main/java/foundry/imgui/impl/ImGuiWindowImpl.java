@@ -11,6 +11,7 @@ import imgui.lwjgl3.glfw.ImGuiImplGlfwNative;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector2fc;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.*;
 import org.lwjgl.system.Callback;
@@ -57,7 +58,6 @@ public class ImGuiWindowImpl {
         protected long[] keyOwnerWindows = new long[GLFW_KEY_LAST];
         protected boolean isWayland = false;
         protected boolean installedCallbacks = false;
-        protected boolean callbacksChainForAllWindows = false;
         protected boolean viewportEnable = false;
 
         // Chain GLFW callbacks: our callbacks will call the user's previously installed callbacks, if any.
@@ -68,7 +68,7 @@ public class ImGuiWindowImpl {
         protected GLFWScrollCallback prevUserCallbackScroll = null;
         protected GLFWKeyCallback prevUserCallbackKey = null;
         protected GLFWCharCallback prevUserCallbackChar = null;
-        protected GLFWMonitorCallback prevUserCallbackMonitor = null;
+        protected GLFWCharModsCallback prevUserCallbackCharMods = null;
 
         // This field is required to use GLFW with touch screens on Windows.
         // For compatibility reasons it was added here as a comment. But we don't use somewhere in the binding implementation.
@@ -306,13 +306,22 @@ public class ImGuiWindowImpl {
         io.addKeyEvent(ImGuiKey.ImGuiMod_Super, (glfwGetKey(window, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS) || (glfwGetKey(window, GLFW_KEY_RIGHT_SUPER) == GLFW_PRESS));
     }
 
-    protected boolean shouldChainCallback(final long window) {
-        return this.data.callbacksChainForAllWindows || window == this.data.window;
+    protected boolean shouldChainCallback(final long window, @Nullable final ImGuiViewport viewport) {
+        final ImGuiViewport imGuiViewport = this.bridge.getMainViewport().imGuiViewport();
+        if (imGuiViewport != null) {
+            return viewport != null && imGuiViewport.ptr == viewport.ptr;
+        }
+        return window == this.data.window;
     }
 
     public void mouseButtonCallback(final long window, final int button, final int action, final int mods) {
-        if (this.data.prevUserCallbackMousebutton != null && this.shouldChainCallback(window)) {
-            this.data.prevUserCallbackMousebutton.invoke(window, button, action, mods);
+        final ImGuiViewport viewport = this.getViewportForWindow(window);
+        if (this.data.prevUserCallbackMousebutton != null && this.shouldChainCallback(window, viewport)) {
+            if (viewport != null) {
+                this.data.prevUserCallbackMousebutton.invoke(this.data.window, button, action, mods);
+            } else {
+                this.data.prevUserCallbackMousebutton.invoke(window, button, action, mods);
+            }
         }
 
         try {
@@ -335,8 +344,13 @@ public class ImGuiWindowImpl {
     }
 
     public void scrollCallback(final long window, final double xOffset, final double yOffset) {
-        if (this.data.prevUserCallbackScroll != null && this.shouldChainCallback(window)) {
-            this.data.prevUserCallbackScroll.invoke(window, xOffset, yOffset);
+        final ImGuiViewport viewport = this.getViewportForWindow(window);
+        if (this.data.prevUserCallbackScroll != null && this.shouldChainCallback(window, viewport)) {
+            if (viewport != null) {
+                this.data.prevUserCallbackScroll.invoke(this.data.window, xOffset, yOffset);
+            } else {
+                this.data.prevUserCallbackScroll.invoke(window, xOffset, yOffset);
+            }
         }
 
         try {
@@ -396,8 +410,13 @@ public class ImGuiWindowImpl {
     }
 
     public void keyCallback(final long window, final int keycode, final int scancode, final int action, final int mods) {
-        if (this.data.prevUserCallbackKey != null && this.shouldChainCallback(window)) {
-            this.data.prevUserCallbackKey.invoke(window, keycode, scancode, action, mods);
+        final ImGuiViewport viewport = this.getViewportForWindow(window);
+        if (this.data.prevUserCallbackKey != null && this.shouldChainCallback(window, viewport)) {
+            if (viewport != null) {
+                this.data.prevUserCallbackKey.invoke(this.data.window, keycode, scancode, action, mods);
+            } else {
+                this.data.prevUserCallbackKey.invoke(window, keycode, scancode, action, mods);
+            }
         }
 
         if (action != GLFW_PRESS && action != GLFW_RELEASE) {
@@ -424,8 +443,13 @@ public class ImGuiWindowImpl {
     }
 
     public void windowFocusCallback(final long window, final boolean focused) {
-        if (this.data.prevUserCallbackWindowFocus != null && this.shouldChainCallback(window)) {
-            this.data.prevUserCallbackWindowFocus.invoke(window, focused);
+        final ImGuiViewport viewport = this.getViewportForWindow(window);
+        if (this.data.prevUserCallbackWindowFocus != null && this.shouldChainCallback(window, viewport)) {
+            if (viewport != null) {
+                this.data.prevUserCallbackWindowFocus.invoke(this.data.window, focused);
+            } else {
+                this.data.prevUserCallbackWindowFocus.invoke(window, focused);
+            }
         }
 
         try {
@@ -441,8 +465,15 @@ public class ImGuiWindowImpl {
     }
 
     public void cursorPosCallback(final long window, final double x, final double y) {
-        if (this.data.prevUserCallbackCursorPos != null && this.shouldChainCallback(window)) {
-            this.data.prevUserCallbackCursorPos.invoke(window, x, y);
+        final ImGuiViewport viewport = this.getViewportForWindow(window);
+        if (this.data.prevUserCallbackCursorPos != null && this.shouldChainCallback(window, viewport)) {
+            if (viewport != null) {
+                glfwGetWindowPos(window, this.props.windowX, this.props.windowY);
+                final Vector2fc origin = this.bridge.getMainViewport().cursorPos();
+                this.data.prevUserCallbackCursorPos.invoke(this.data.window, x - origin.x(), y - origin.y());
+            } else {
+                this.data.prevUserCallbackCursorPos.invoke(window, x, y);
+            }
         }
 
         try {
@@ -468,8 +499,13 @@ public class ImGuiWindowImpl {
     // Workaround: X11 seems to send spurious Leave/Enter events which would make us lose our position,
     // so we back it up and restore on Leave/Enter (see https://github.com/ocornut/imgui/issues/4984)
     public void cursorEnterCallback(final long window, final boolean entered) {
-        if (this.data.prevUserCallbackCursorEnter != null && this.shouldChainCallback(window)) {
-            this.data.prevUserCallbackCursorEnter.invoke(window, entered);
+        final ImGuiViewport viewport = this.getViewportForWindow(window);
+        if (this.data.prevUserCallbackCursorEnter != null && this.shouldChainCallback(window, viewport)) {
+            if (viewport != null) {
+                this.data.prevUserCallbackCursorEnter.invoke(this.data.window, entered);
+            } else {
+                this.data.prevUserCallbackCursorEnter.invoke(window, entered);
+            }
         }
 
         try {
@@ -490,8 +526,13 @@ public class ImGuiWindowImpl {
     }
 
     public void charCallback(final long window, final int c) {
-        if (this.data.prevUserCallbackChar != null && this.shouldChainCallback(window)) {
-            this.data.prevUserCallbackChar.invoke(window, c);
+        final ImGuiViewport viewport = this.getViewportForWindow(window);
+        if (this.data.prevUserCallbackChar != null && this.shouldChainCallback(window, viewport)) {
+            if (viewport != null) {
+                this.data.prevUserCallbackChar.invoke(this.data.window, c);
+            } else {
+                this.data.prevUserCallbackChar.invoke(window, c);
+            }
         }
 
         try {
@@ -499,6 +540,17 @@ public class ImGuiWindowImpl {
             ImGui.getIO().addInputCharacter(c);
         } finally {
             this.bridge.stop();
+        }
+    }
+
+    public void charModsCallback(final long window, final int c, final int mods) {
+        final ImGuiViewport viewport = this.getViewportForWindow(window);
+        if (this.data.prevUserCallbackCharMods != null && this.shouldChainCallback(window, viewport)) {
+            if (viewport != null) {
+                this.data.prevUserCallbackCharMods.invoke(this.data.window, c, mods);
+            } else {
+                this.data.prevUserCallbackCharMods.invoke(window, c, mods);
+            }
         }
     }
 
@@ -510,6 +562,7 @@ public class ImGuiWindowImpl {
         this.data.prevUserCallbackScroll = glfwSetScrollCallback(window, this::scrollCallback);
         this.data.prevUserCallbackKey = glfwSetKeyCallback(window, this::keyCallback);
         this.data.prevUserCallbackChar = glfwSetCharCallback(window, this::charCallback);
+        this.data.prevUserCallbackCharMods = glfwSetCharModsCallback(window, this::charModsCallback);
         this.data.installedCallbacks = true;
     }
 
@@ -527,6 +580,7 @@ public class ImGuiWindowImpl {
         this.freeCallback(glfwSetScrollCallback(window, this.data.prevUserCallbackScroll));
         this.freeCallback(glfwSetKeyCallback(window, this.data.prevUserCallbackKey));
         this.freeCallback(glfwSetCharCallback(window, this.data.prevUserCallbackChar));
+        this.freeCallback(glfwSetCharModsCallback(window, this.data.prevUserCallbackCharMods));
         this.data.installedCallbacks = false;
         this.data.prevUserCallbackWindowFocus = null;
         this.data.prevUserCallbackCursorEnter = null;
@@ -535,16 +589,24 @@ public class ImGuiWindowImpl {
         this.data.prevUserCallbackScroll = null;
         this.data.prevUserCallbackKey = null;
         this.data.prevUserCallbackChar = null;
+        this.data.prevUserCallbackCharMods = null;
     }
 
-    /**
-     * Set to 'true' to enable chaining installed callbacks for all windows (including secondary viewports created by backends or by user.
-     * This is 'false' by default meaning we only chain callbacks for the main viewport.
-     * We cannot set this to 'true' by default because user callbacks code may be not testing the 'window' parameter of their callback.
-     * If you set this to 'true' your user callback code will need to make sure you are testing the 'window' parameter.
-     */
-    public void setCallbacksChainForAllWindows(final boolean chainForAllWindows) {
-        this.data.callbacksChainForAllWindows = chainForAllWindows;
+    private @Nullable ImGuiViewport getViewportForWindow(final long window) {
+        try {
+            this.bridge.start();
+            final ImGuiPlatformIO platformIO = ImGui.getPlatformIO();
+            final int viewportsSize = platformIO.getViewportsSize();
+            for (int i = 0; i < viewportsSize; i++) {
+                final ImGuiViewport viewport = platformIO.getViewports(i);
+                if (viewport.getPlatformHandle() == window) {
+                    return viewport;
+                }
+            }
+            return null;
+        } finally {
+            this.bridge.stop();
+        }
     }
 
     protected Data newData() {
@@ -1531,7 +1593,7 @@ public class ImGuiWindowImpl {
 
             //? if >=1.21.5 {
             /*viewportData.getRenderTarget().blitToScreen();
-            *///? } else {
+             *///? } else {
             foundry.imgui.impl.renderer.OpenGLPresentation.get().presentToScreen(viewportData.getRenderTarget());
             //? }
 

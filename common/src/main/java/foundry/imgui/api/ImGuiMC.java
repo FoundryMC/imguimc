@@ -58,6 +58,17 @@ public interface ImGuiMC {
     }
 
     /**
+     * Requests for the main Minecraft view to be placed into an ImGui window.
+     *
+     * @since 2.0.0
+     */
+    static void captureMainFramebuffer() {
+        if (ImGuiMCImpl.handler != null) {
+            ImGuiMCImpl.handler.setWantCaptureMainFramebuffer();
+        }
+    }
+
+    /**
      * Fetches a data-driven font by name.
      *
      * @param name   The name of the font

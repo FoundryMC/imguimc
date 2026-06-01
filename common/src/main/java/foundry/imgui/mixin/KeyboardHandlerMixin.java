@@ -1,6 +1,7 @@
 package foundry.imgui.mixin;
 
 import foundry.imgui.api.ImGuiMC;
+import foundry.imgui.impl.ImGuiMCImpl;
 import net.minecraft.client.KeyboardHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -13,7 +14,7 @@ public class KeyboardHandlerMixin {
     @Inject(method = "keyPress", at = @At("HEAD"), cancellable = true)
     public void keyCallback(final CallbackInfo ci) {
         try (final ImGuiMC.ActiveContext ctx = ImGuiMC.withImGui()) {
-            if (ctx != null && ctx.io().getWantCaptureKeyboard()) {
+            if (ctx != null && ctx.io().getWantCaptureKeyboard() && ImGuiMCImpl.handler.getMainViewport().isCaptureKeyboard()) {
                 ci.cancel();
             }
         }
@@ -22,7 +23,7 @@ public class KeyboardHandlerMixin {
     @Inject(method = "charTyped", at = @At("HEAD"), cancellable = true)
     public void charCallback(final CallbackInfo ci) {
         try (final ImGuiMC.ActiveContext ctx = ImGuiMC.withImGui()) {
-            if (ctx != null && ctx.io().getWantCaptureKeyboard()) {
+            if (ctx != null && ctx.io().getWantCaptureKeyboard() && ImGuiMCImpl.handler.getMainViewport().isCaptureKeyboard()) {
                 ci.cancel();
             }
         }

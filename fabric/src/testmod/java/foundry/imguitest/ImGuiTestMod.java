@@ -2,6 +2,7 @@ package foundry.imguitest;
 
 import foundry.imgui.api.ImGuiMC;
 import foundry.imgui.api.ImGuiMCEvents;
+import imgui.ImFont;
 import imgui.ImGui;
 import imgui.flag.ImGuiConfigFlags;
 import net.fabricmc.api.ClientModInitializer;
@@ -23,6 +24,8 @@ public class ImGuiTestMod implements ClientModInitializer {
                             ImGuiConfigFlags.ViewportsEnable);
         });
         ImGuiMCEvents.INSTANCE.preRenderImGuiEvent(() -> {
+            ImGui.dockSpaceOverViewport();
+
             ImGui.showDemoWindow();
             if (ImGui.begin("Test Dock")) {
                 ImGui.dockSpace(1);
@@ -39,6 +42,8 @@ public class ImGuiTestMod implements ClientModInitializer {
             }
 
             ImGui.showMetricsWindow();
+
+            ImGuiMC.captureMainFramebuffer();
         });
     }
 }
