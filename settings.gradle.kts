@@ -30,7 +30,7 @@ stonecutter {
 //                "1.21.10",
                 "1.21.11",
                 "26.1",
-                "26.2-pre-2"
+                "26.2"
             )
         }
         branch("fabric") {
@@ -47,7 +47,7 @@ stonecutter {
 //                "1.21.10",
                 "1.21.11"
             ).buildscript("mapped.build.gradle.kts")
-            versions("26.1", "26.2-pre-2")
+            versions("26.1", "26.2")
         }
         branch("neoforge") {
             versions(

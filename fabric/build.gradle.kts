@@ -102,7 +102,7 @@ dependencies {
         }
     }
 
-    minecraft("com.mojang:minecraft:${sc.current.version}")
+    minecraft("com.mojang:minecraft:${project.property("deps.minecraft")}")
     implementation("net.fabricmc:fabric-loader:${project.property("deps.fabric_loader")}")
 
     fapi("fabric-api-base", "fabric-resource-loader-v1")

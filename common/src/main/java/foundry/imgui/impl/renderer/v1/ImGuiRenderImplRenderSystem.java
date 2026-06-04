@@ -581,10 +581,10 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
                 height.get(),
                 1,
                 1);
-        device.createCommandEncoder().writeToTexture(
+        //? if >=26.2-pre-3 {
+        /^device.createCommandEncoder().writeToTexture(
                 this.data.fontTexture,
                 pixels,
-                NativeImage.Format.RGBA,
                 0,
                 0,
                 0,
@@ -592,6 +592,19 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
                 width.get(),
                 height.get()
         );
+        ^///? } else {
+        device.createCommandEncoder().writeToTexture(
+                this.data.fontTexture,
+                pixels,
+                com.mojang.blaze3d.platform.NativeImage.Format.RGBA,
+                0,
+                0,
+                0,
+                0,
+                width.get(),
+                height.get()
+        );
+        //? }
         this.data.fontTextureView = device.createTextureView(this.data.fontTexture);
 
         // Store our identifier
