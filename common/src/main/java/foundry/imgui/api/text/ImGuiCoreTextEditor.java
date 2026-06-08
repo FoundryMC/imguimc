@@ -831,6 +831,7 @@ public final class ImGuiCoreTextEditor {
 
     public static boolean isCursorToggled() {
         Minecraft mc = Minecraft.getInstance();
+
         return mc != null && !mc.mouseHandler.isMouseGrabbed();
     }
 }
