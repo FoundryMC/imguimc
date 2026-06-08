@@ -1,26 +1,20 @@
 package foundry.imgui.api.text.color;
 
-import net.soul.shade.impl.client.editor.text.editor.EditorGlyph;
+import foundry.imgui.api.text.editor.EditorGlyph;
 
 import java.util.List;
 
-/**
- * Syntax highlighting contract. Only colorizeVisibleLines is called every frame,
- * so implementations should cache aggressively.
- */
 public interface IEditorColorizer {
-
-    void colorizeVisibleLines(List<List<EditorGlyph>> lines,
-                              int firstVisibleLine, int lastVisibleLine);
+    // Only called for the visible range each frame; implementations should cache.
+    void colorizeVisibleLines(List<List<EditorGlyph>> lines, int firstVisibleLine, int lastVisibleLine);
 
     void markLineDirty(int lineIdx);
-
     void markLinesDirty(int startLine, int endLine);
 
-    // Called after setText — nuke everything.
+    // Nuke all cached state after setText.
     void invalidateAll();
 
-    // Immediate single-line recolor, used after autocomplete inserts text.
+    // Immediate single-line recolor used after autocomplete inserts text.
     void colorizeLine(List<List<EditorGlyph>> lines, int lineIdx);
 
     int getDefaultColor();

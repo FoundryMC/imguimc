@@ -1,17 +1,12 @@
 package foundry.imgui.api.text.color;
 
-import net.soul.shade.impl.client.editor.text.editor.EditorGlyph;
+import foundry.imgui.api.text.editor.EditorGlyph;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Handles the lazy per-line cache shared by all colorizer implementations.
- * Subclasses only need to implement colorizeLineImpl and analyzeDocument.
- */
 public abstract class AbstractBaseColorizer implements IEditorColorizer {
-
     private final Map<Integer, CacheEntry> cache = new HashMap<>();
     private int version = 0;
     protected boolean needsFullAnalysis = true;
@@ -34,8 +29,7 @@ public abstract class AbstractBaseColorizer implements IEditorColorizer {
     }
 
     @Override
-    public void colorizeVisibleLines(List<List<EditorGlyph>> lines,
-                                     int first, int last) {
+    public void colorizeVisibleLines(List<List<EditorGlyph>> lines, int first, int last) {
         if (needsFullAnalysis) {
             analyzeDocument(lines);
             needsFullAnalysis = false;
@@ -49,24 +43,25 @@ public abstract class AbstractBaseColorizer implements IEditorColorizer {
     public void colorizeLine(List<List<EditorGlyph>> lines, int idx) {
         if (idx < 0 || idx >= lines.size()) return;
         cache.remove(idx);
-        if (needsFullAnalysis) { analyzeDocument(lines); needsFullAnalysis = false; }
+        if (needsFullAnalysis) {
+            analyzeDocument(lines);
+            needsFullAnalysis = false;
+        }
         colorizeLineIfNeeded(lines, idx);
     }
 
     private void colorizeLineIfNeeded(List<List<EditorGlyph>> lines, int idx) {
         List<EditorGlyph> line = lines.get(idx);
         String text = glyphsToString(line);
-
         CacheEntry entry = cache.get(idx);
         if (entry != null && entry.text.equals(text) && entry.version == version) return;
-
         colorizeLineImpl(line, idx, text);
         cache.put(idx, new CacheEntry(text, version));
     }
 
     protected abstract void colorizeLineImpl(List<EditorGlyph> line, int lineIdx, String text);
 
-    // Scan the whole document for user-defined types/functions. Runs once after invalidateAll.
+    // Scan the whole document for user-defined types/functions. Runs once per invalidation.
     protected abstract void analyzeDocument(List<List<EditorGlyph>> lines);
 
     protected static String glyphsToString(List<EditorGlyph> glyphs) {
@@ -86,16 +81,16 @@ public abstract class AbstractBaseColorizer implements IEditorColorizer {
         return -1;
     }
 
-    private static final class CacheEntry {
-        final String text;
-        final int    version;
-        CacheEntry(String text, int version) { this.text = text; this.version = version; }
-    }
-
     public void colorize(List<List<EditorGlyph>> lines) {
         invalidateAll();
         analyzeDocument(lines);
         needsFullAnalysis = false;
         for (int i = 0; i < lines.size(); i++) colorizeLineIfNeeded(lines, i);
+    }
+
+    private static final class CacheEntry {
+        final String text;
+        final int version;
+        CacheEntry(String text, int version) { this.text = text; this.version = version; }
     }
 }

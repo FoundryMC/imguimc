@@ -5,7 +5,7 @@ public final class EditorCoordinates {
     public int column;
 
     public EditorCoordinates(int line, int column) {
-        this.line   = line;
+        this.line = line;
         this.column = column;
     }
 
@@ -14,12 +14,12 @@ public final class EditorCoordinates {
     }
 
     public void set(int line, int column) {
-        this.line   = line;
+        this.line = line;
         this.column = column;
     }
 
     public void set(EditorCoordinates o) {
-        this.line   = o.line;
+        this.line = o.line;
         this.column = o.column;
     }
 

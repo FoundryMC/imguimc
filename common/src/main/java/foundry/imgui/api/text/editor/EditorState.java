@@ -3,9 +3,7 @@ package foundry.imgui.api.text.editor;
 import java.util.ArrayList;
 import java.util.List;
 
-// Snapshot of the document + cursor for undo/redo. Stacks are capped at MAX_UNDO.
 public final class EditorState {
-
     public static final int MAX_UNDO = 200;
 
     public final List<List<EditorGlyph>> lines;
@@ -17,10 +15,10 @@ public final class EditorState {
                        EditorCoordinates cursor,
                        EditorCoordinates selStart,
                        EditorCoordinates selEnd) {
-        this.lines    = deepCopyLines(lines);
-        this.cursor   = cursor.copy();
+        this.lines = deepCopyLines(lines);
+        this.cursor = cursor.copy();
         this.selStart = selStart.copy();
-        this.selEnd   = selEnd.copy();
+        this.selEnd = selEnd.copy();
     }
 
     public static List<List<EditorGlyph>> deepCopyLines(List<List<EditorGlyph>> src) {

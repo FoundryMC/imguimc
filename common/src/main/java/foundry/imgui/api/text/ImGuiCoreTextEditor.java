@@ -1,82 +1,65 @@
 package foundry.imgui.api.text;
 
+import foundry.imgui.api.text.autocomplete.IAutocompleteProvider;
+import foundry.imgui.api.text.color.IEditorColorizer;
+import foundry.imgui.api.text.editor.EditorAutocomplete;
+import foundry.imgui.api.text.editor.EditorCoordinates;
+import foundry.imgui.api.text.editor.EditorGlyph;
+import foundry.imgui.api.text.editor.EditorState;
+import foundry.imgui.api.text.editor.EditorTheme;
 import imgui.ImDrawList;
 import imgui.ImGui;
 import imgui.ImVec2;
 import imgui.flag.ImGuiCol;
 import imgui.flag.ImGuiKey;
 import imgui.flag.ImGuiWindowFlags;
-import net.soul.shade.impl.client.editor.ToggleCursorKey;
-import net.soul.shade.impl.client.editor.text.autocomplete.IAutocompleteProvider;
-import net.soul.shade.impl.client.editor.text.color.IEditorColorizer;
-import net.soul.shade.impl.client.editor.text.editor.EditorAutocomplete;
-import net.soul.shade.impl.client.editor.text.editor.EditorCoordinates;
-import net.soul.shade.impl.client.editor.text.editor.EditorGlyph;
-import net.soul.shade.impl.client.editor.text.editor.EditorState;
-import net.soul.shade.impl.client.editor.text.editor.EditorTheme;
+import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * Language-agnostic ImGui text editor.
- *
- * Supports full keyboard editing (Ctrl+A/C/V/X/Z/Y, Home/End, PgUp/PgDn,
- * Shift-select, Ctrl+arrow word-jump), mouse (click, drag, double/triple click),
- * virtual scroll, blinking cursor, gutter with line numbers, pluggable colorizer
- * and autocomplete, and a capped undo/redo stack.
- *
- * Usage:
- *   ImguiCoreTextEditor editor = new ImguiCoreTextEditor(colorizer, provider, EditorTheme.dark().build());
- *   editor.render("##myEditor", availWidth, availHeight, false);
- */
-public final class ImguiCoreTextEditor {
+// GHO__ST
+public final class ImGuiCoreTextEditor {
 
     private final List<List<EditorGlyph>> lines = new ArrayList<>();
 
-    private final EditorCoordinates cursor         = new EditorCoordinates(0, 0);
-    private final EditorCoordinates selStart       = new EditorCoordinates(0, 0);
-    private final EditorCoordinates selEnd         = new EditorCoordinates(0, 0);
-    private final EditorCoordinates dragAnchor     = new EditorCoordinates(0, 0);
+    private final EditorCoordinates cursor = new EditorCoordinates(0, 0);
+    private final EditorCoordinates selStart = new EditorCoordinates(0, 0);
+    private final EditorCoordinates selEnd = new EditorCoordinates(0, 0);
+    private final EditorCoordinates dragAnchor = new EditorCoordinates(0, 0);
     private final EditorCoordinates selectionAnchor = new EditorCoordinates(0, 0);
 
-    private int preferredColumn    = 0;
+    private int preferredColumn = 0;
     private boolean usePreferredColumn = false;
-
-    private boolean readOnly   = false;
+    private boolean readOnly = false;
     private boolean isDragging = false;
 
     private final List<EditorState> undoStack = new ArrayList<>();
     private final List<EditorState> redoStack = new ArrayList<>();
 
-    private float textStart            = 60f;
-    private ImVec2 contentOrigin       = new ImVec2(0, 0);
-    private ImVec2 drawCursorPos       = new ImVec2(0, 0);
+    private float textStart = 60f;
+    private ImVec2 contentOrigin = new ImVec2(0, 0);
+    private ImVec2 drawCursorPos = new ImVec2(0, 0);
     private boolean drawCursorPosReady = false;
-    private float maxLineWidth         = 0f;
-    private long blinkEpoch            = System.currentTimeMillis();
-    private float editorScrollY        = 0f;
+    private float maxLineWidth = 0f;
+    private long blinkEpoch = System.currentTimeMillis();
+    private float editorScrollY = 0f;
 
-    private final IEditorColorizer   colorizer;
+    private final IEditorColorizer colorizer;
     private final EditorAutocomplete autocomplete;
-    private final EditorTheme        theme;
+    private final EditorTheme theme;
 
     private final List<Integer> pendingChars = new ArrayList<>();
 
     private long lastClickTime = 0;
-    private int  clickCount    = 0;
+    private int clickCount = 0;
     private final EditorCoordinates lastClickPos = new EditorCoordinates(-1, -1);
 
-    public ImguiCoreTextEditor(IEditorColorizer colorizer,
-                               IAutocompleteProvider provider,
-                               EditorTheme theme) {
-        this.colorizer    = colorizer != null ? colorizer : new NullColorizer();
-        this.autocomplete = provider  != null ? new EditorAutocomplete(provider) : null;
-        this.theme        = theme;
+    public ImGuiCoreTextEditor(IEditorColorizer colorizer, IAutocompleteProvider provider, EditorTheme theme) {
+        this.colorizer = colorizer != null ? colorizer : new NullColorizer();
+        this.autocomplete = provider != null ? new EditorAutocomplete(provider) : null;
+        this.theme = theme;
         lines.add(new ArrayList<>());
     }
-
-    // ── Public API ────────────────────────────────────────────────────────
 
     public void setText(String text) {
         lines.clear();
@@ -107,11 +90,11 @@ public final class ImguiCoreTextEditor {
         return sb.toString();
     }
 
-    public int getTotalLines()          { return lines.size(); }
+    public int getTotalLines() { return lines.size(); }
     public void setReadOnly(boolean ro) { this.readOnly = ro; }
-    public boolean isReadOnly()         { return readOnly; }
+    public boolean isReadOnly() { return readOnly; }
     public IEditorColorizer getColorizer() { return colorizer; }
-    public EditorTheme      getTheme()     { return theme; }
+    public EditorTheme getTheme() { return theme; }
 
     public void resetBlink() { blinkEpoch = System.currentTimeMillis(); }
 
@@ -120,11 +103,9 @@ public final class ImguiCoreTextEditor {
         pendingChars.add(codepoint);
     }
 
-    // ── Render ────────────────────────────────────────────────────────────
-
     public void render(String id, float width, float height, boolean isResizing) {
-        float fontSize   = ImGui.getFontSize();
-        float charWidth  = ImGui.getFont().calcTextSizeA(fontSize, Float.MAX_VALUE, -1, "M").x;
+        float fontSize = ImGui.getFontSize();
+        float charWidth = ImGui.getFont().calcTextSizeA(fontSize, Float.MAX_VALUE, -1, "M").x;
         float lineHeight = fontSize * theme.lineSpacing;
 
         boolean mouseOverAC = autocomplete != null
@@ -150,24 +131,19 @@ public final class ImguiCoreTextEditor {
             }
         }
 
-        boolean canInput = focused && !isResizing && ToggleCursorKey.isCursorToggled();
-
-        if (canInput) {
-            handleKeyboard(charWidth, lineHeight);
-        }
+        boolean canInput = focused && !isResizing && isCursorToggled();
+        if (canInput) handleKeyboard(charWidth, lineHeight);
 
         renderContent(charWidth, lineHeight, width, height, focused, hovered, mouseOverAC, isResizing, canInput);
 
         ImGui.endChild();
 
         // Autocomplete drawn outside the child window so it floats on top of everything.
-        if (autocomplete != null && autocomplete.isVisible() && ToggleCursorKey.isCursorToggled()) {
+        if (autocomplete != null && autocomplete.isVisible() && isCursorToggled()) {
             boolean clicked = autocomplete.render(charWidth, lineHeight, contentOrigin, cursor, textStart, editorScrollY, height, lines, this);
             if (clicked) {
                 int lineIdx = cursor.line;
-                if (lineIdx >= 0 && lineIdx < lines.size()) {
-                    colorizer.colorizeLine(lines, lineIdx);
-                }
+                if (lineIdx >= 0 && lineIdx < lines.size()) colorizer.colorizeLine(lines, lineIdx);
                 autocomplete.hide();
             }
         }
@@ -178,23 +154,22 @@ public final class ImguiCoreTextEditor {
                                boolean focused, boolean hovered,
                                boolean mouseOverAC, boolean isResizing,
                                boolean canInput) {
-        ImDrawList dl      = ImGui.getWindowDrawList();
-        ImVec2     origin  = ImGui.getCursorScreenPos();
-        float      scrollY = ImGui.getScrollY();
-        float      scrollX = ImGui.getScrollX();
+        ImDrawList dl = ImGui.getWindowDrawList();
+        ImVec2 origin = ImGui.getCursorScreenPos();
+        float scrollY = ImGui.getScrollY();
+        float scrollX = ImGui.getScrollX();
 
-        drawCursorPos      = origin;
+        drawCursorPos = origin;
         drawCursorPosReady = true;
-        editorScrollY      = scrollY;
+        editorScrollY = scrollY;
 
         int firstLine = Math.max(0, (int)(scrollY / lineHeight) - 1);
-        int lastLine  = Math.min(lines.size() - 1, firstLine + (int)(height / lineHeight) + 2);
+        int lastLine = Math.min(lines.size() - 1, firstLine + (int)(height / lineHeight) + 2);
 
         String maxNumStr = " " + lines.size() + " ";
         textStart = ImGui.getFont().calcTextSizeA(ImGui.getFontSize(), Float.MAX_VALUE, -1, maxNumStr).x
                 + theme.gutterPaddingRight;
 
-        // Background is drawn anchored to the window position, not the scroll position.
         dl.addRectFilled(contentOrigin.x, contentOrigin.y,
                 contentOrigin.x + width,
                 contentOrigin.y + height,
@@ -209,7 +184,7 @@ public final class ImguiCoreTextEditor {
 
         float newMaxWidth = 0f;
         EditorCoordinates normStart = normSelStart();
-        EditorCoordinates normEnd   = normSelEnd();
+        EditorCoordinates normEnd = normSelEnd();
 
         for (int li = firstLine; li <= lastLine; li++) {
             float lineY = origin.y + li * lineHeight;
@@ -228,12 +203,11 @@ public final class ImguiCoreTextEditor {
                 float ex = (li == normEnd.line)
                         ? contentOrigin.x + textStart - scrollX + colX(li, normEnd.column, charWidth)
                         : contentOrigin.x + Math.max(width, maxLineWidth + textStart + 20);
-
                 dl.addRectFilled(sx, lineY, ex, lineY + lineHeight, theme.selectionColor);
             }
 
             String numStr = String.valueOf(li + 1);
-            float  numW   = ImGui.getFont().calcTextSizeA(ImGui.getFontSize(), Float.MAX_VALUE, -1, numStr).x;
+            float numW = ImGui.getFont().calcTextSizeA(ImGui.getFontSize(), Float.MAX_VALUE, -1, numStr).x;
             dl.addText(origin.x + textStart - numW - theme.gutterPaddingRight - 2,
                     lineY, theme.lineNumberColor, numStr);
 
@@ -268,35 +242,31 @@ public final class ImguiCoreTextEditor {
         // +100 so the cursor never sits flush against the scroll edge
         ImGui.dummy(textStart + maxLineWidth + 100f, lines.size() * lineHeight);
 
-        if (!isResizing && canInput) {
-            handleMouse(charWidth, lineHeight, hovered, mouseOverAC);
-        }
+        if (!isResizing && canInput) handleMouse(charWidth, lineHeight, hovered, mouseOverAC);
     }
 
-    // ── Keyboard handling ─────────────────────────────────────────────────
-
     private void handleKeyboard(float charWidth, float lineHeight) {
-        boolean ctrl  = ImGui.getIO().getKeyCtrl();
+        boolean ctrl = ImGui.getIO().getKeyCtrl();
         boolean shift = ImGui.getIO().getKeyShift();
 
         if (autocomplete != null && autocomplete.handleKeyboard(cursor, lines, this)) return;
 
-        if (ImGui.isKeyPressed(ImGuiKey.LeftArrow))  { if (ctrl) wordLeft(shift);  else moveLeft(shift);     updateAutocomplete(); return; }
-        if (ImGui.isKeyPressed(ImGuiKey.RightArrow)) { if (ctrl) wordRight(shift); else moveRight(shift);    updateAutocomplete(); return; }
-        if (ImGui.isKeyPressed(ImGuiKey.UpArrow))    { moveUp(shift);   updateAutocomplete(); return; }
-        if (ImGui.isKeyPressed(ImGuiKey.DownArrow))  { moveDown(shift); updateAutocomplete(); return; }
-        if (ImGui.isKeyPressed(ImGuiKey.Home))       { if (ctrl) moveDocHome(shift); else moveLineHome(shift); updateAutocomplete(); return; }
-        if (ImGui.isKeyPressed(ImGuiKey.End))        { if (ctrl) moveDocEnd(shift);  else moveLineEnd(shift);  updateAutocomplete(); return; }
-        if (ImGui.isKeyPressed(ImGuiKey.PageUp))     { movePageUp(shift, lineHeight);   updateAutocomplete(); return; }
-        if (ImGui.isKeyPressed(ImGuiKey.PageDown))   { movePageDown(shift, lineHeight); updateAutocomplete(); return; }
+        if (ImGui.isKeyPressed(ImGuiKey.LeftArrow)) { if (ctrl) wordLeft(shift); else moveLeft(shift); updateAutocomplete(); return; }
+        if (ImGui.isKeyPressed(ImGuiKey.RightArrow)) { if (ctrl) wordRight(shift); else moveRight(shift); updateAutocomplete(); return; }
+        if (ImGui.isKeyPressed(ImGuiKey.UpArrow)) { moveUp(shift); updateAutocomplete(); return; }
+        if (ImGui.isKeyPressed(ImGuiKey.DownArrow)) { moveDown(shift); updateAutocomplete(); return; }
+        if (ImGui.isKeyPressed(ImGuiKey.Home)) { if (ctrl) moveDocHome(shift); else moveLineHome(shift); updateAutocomplete(); return; }
+        if (ImGui.isKeyPressed(ImGuiKey.End)) { if (ctrl) moveDocEnd(shift); else moveLineEnd(shift); updateAutocomplete(); return; }
+        if (ImGui.isKeyPressed(ImGuiKey.PageUp)) { movePageUp(shift, lineHeight); updateAutocomplete(); return; }
+        if (ImGui.isKeyPressed(ImGuiKey.PageDown)) { movePageDown(shift, lineHeight); updateAutocomplete(); return; }
 
         if (ctrl) {
             if (ImGui.isKeyPressed(ImGuiKey.A)) { selectAll(); return; }
-            if (ImGui.isKeyPressed(ImGuiKey.C)) { copy();      return; }
-            if (ImGui.isKeyPressed(ImGuiKey.X) && !readOnly) { cut();   return; }
+            if (ImGui.isKeyPressed(ImGuiKey.C)) { copy(); return; }
+            if (ImGui.isKeyPressed(ImGuiKey.X) && !readOnly) { cut(); return; }
             if (ImGui.isKeyPressed(ImGuiKey.V) && !readOnly) { paste(); return; }
-            if (ImGui.isKeyPressed(ImGuiKey.Z) && !readOnly) { undo();  return; }
-            if (ImGui.isKeyPressed(ImGuiKey.Y) && !readOnly) { redo();  return; }
+            if (ImGui.isKeyPressed(ImGuiKey.Z) && !readOnly) { undo(); return; }
+            if (ImGui.isKeyPressed(ImGuiKey.Y) && !readOnly) { redo(); return; }
         }
 
         if (readOnly) return;
@@ -338,9 +308,9 @@ public final class ImguiCoreTextEditor {
             for (char c = 32; c < 127; c++) {
                 if (ImGui.isKeyPressed(c, false)) {
                     char toInsert;
-                    if (c >= 'a' && c <= 'z')      toInsert = shift ? (char)(c - 32) : c;
+                    if (c >= 'a' && c <= 'z') toInsert = shift ? (char)(c - 32) : c;
                     else if (c >= 'A' && c <= 'Z') toInsert = shift ? c : (char)(c + 32);
-                    else                           toInsert = shift ? shiftChar(c) : c;
+                    else toInsert = shift ? shiftChar(c) : c;
                     pushUndo();
                     if (hasSelection()) deleteSelection();
                     insertChar(toInsert);
@@ -354,19 +324,16 @@ public final class ImguiCoreTextEditor {
         }
     }
 
-    // ── Mouse handling ────────────────────────────────────────────────────
-
-    private void handleMouse(float charWidth, float lineHeight,
-                             boolean hovered, boolean mouseOverAC) {
+    private void handleMouse(float charWidth, float lineHeight, boolean hovered, boolean mouseOverAC) {
         if (!hovered || mouseOverAC) return;
 
         if (ImGui.isMouseClicked(0)) {
-            long now  = System.currentTimeMillis();
+            long now = System.currentTimeMillis();
             EditorCoordinates click = screenToCoords(charWidth, lineHeight);
 
             boolean sameSpot = click.equals(lastClickPos);
             if (sameSpot && now - lastClickTime < 500) clickCount++;
-            else                                       clickCount = 1;
+            else clickCount = 1;
             lastClickTime = now;
             lastClickPos.set(click);
 
@@ -401,18 +368,16 @@ public final class ImguiCoreTextEditor {
     }
 
     public void scrollToCursor(float charWidth, float lineHeight, float viewW, float viewH) {
-        float lineY   = cursor.line * lineHeight;
+        float lineY = cursor.line * lineHeight;
         float scrollY = ImGui.getScrollY();
-        if (lineY < scrollY)                       ImGui.setScrollY(lineY);
-        if (lineY + lineHeight > scrollY + viewH)  ImGui.setScrollY(lineY + lineHeight - viewH);
+        if (lineY < scrollY) ImGui.setScrollY(lineY);
+        if (lineY + lineHeight > scrollY + viewH) ImGui.setScrollY(lineY + lineHeight - viewH);
 
-        float colX_   = textStart + colX(cursor.line, cursor.column, charWidth);
+        float colX_ = textStart + colX(cursor.line, cursor.column, charWidth);
         float scrollX = ImGui.getScrollX();
-        if (colX_ < scrollX + textStart + 10)    ImGui.setScrollX(Math.max(0, colX_ - textStart - 10));
+        if (colX_ < scrollX + textStart + 10) ImGui.setScrollX(Math.max(0, colX_ - textStart - 10));
         if (colX_ + charWidth > scrollX + viewW) ImGui.setScrollX(colX_ + charWidth - viewW + 20);
     }
-
-    // ── Editing operations ────────────────────────────────────────────────
 
     private void insertChar(char c) {
         if (readOnly) return;
@@ -422,18 +387,15 @@ public final class ImguiCoreTextEditor {
     }
 
     private void insertNewline() {
-        List<EditorGlyph> cur  = lines.get(cursor.line);
+        List<EditorGlyph> cur = lines.get(cursor.line);
         List<EditorGlyph> tail = new ArrayList<>(cur.subList(cursor.column, cur.size()));
         cur.subList(cursor.column, cur.size()).clear();
 
         int defColor = colorizer.getDefaultColor();
 
-        // Copy leading whitespace only — no bracket detection or extra indent logic.
         int baseIndent = 0;
-        while (baseIndent < cur.size()
-                && (cur.get(baseIndent).ch == ' ' || cur.get(baseIndent).ch == '\t')) {
+        while (baseIndent < cur.size() && (cur.get(baseIndent).ch == ' ' || cur.get(baseIndent).ch == '\t'))
             baseIndent++;
-        }
 
         List<EditorGlyph> indentGlyphs = new ArrayList<>(baseIndent);
         for (int i = 0; i < baseIndent; i++)
@@ -455,7 +417,7 @@ public final class ImguiCoreTextEditor {
             colorizer.markLineDirty(cursor.line);
         } else if (cursor.line > 0) {
             List<EditorGlyph> prev = lines.get(cursor.line - 1);
-            List<EditorGlyph> cur  = lines.remove(cursor.line);
+            List<EditorGlyph> cur = lines.remove(cursor.line);
             cursor.line--;
             cursor.column = prev.size();
             prev.addAll(cur);
@@ -486,7 +448,7 @@ public final class ImguiCoreTextEditor {
             colorizer.markLineDirty(s.line);
         } else {
             List<EditorGlyph> firstLine = lines.get(s.line);
-            List<EditorGlyph> lastLine  = lines.get(e.line);
+            List<EditorGlyph> lastLine = lines.get(e.line);
             firstLine.subList(s.column, firstLine.size()).clear();
             firstLine.addAll(lastLine.subList(e.column, lastLine.size()));
             lines.subList(s.line + 1, e.line + 1).clear();
@@ -496,8 +458,6 @@ public final class ImguiCoreTextEditor {
         cursor.set(s);
         clearSelection();
     }
-
-    // ── Clipboard ─────────────────────────────────────────────────────────
 
     private void copy() {
         if (!hasSelection()) return;
@@ -519,8 +479,7 @@ public final class ImguiCoreTextEditor {
         if (hasSelection()) deleteSelection();
         int defColor = colorizer.getDefaultColor();
 
-        // Normalize line endings then split — faster than calling insertNewline()
-        // in a loop and avoids triggering auto-indent on pasted content.
+        // Normalize line endings then split — avoids triggering auto-indent on pasted content.
         String normalized = clip.replace("\r\n", "\n").replace('\r', '\n');
         String[] parts = normalized.split("\n", -1);
 
@@ -542,14 +501,12 @@ public final class ImguiCoreTextEditor {
             }
         }
 
-        // Full invalidation so analyzeDocument picks up any user-defined symbols in the pasted code.
+        // Full invalidation so analyzeDocument picks up user-defined symbols in pasted code.
         colorizer.invalidateAll();
         resetBlink();
         maxLineWidth = 0;
         updateAutocomplete();
     }
-
-    // ── Indent / Unindent ─────────────────────────────────────────────────
 
     private void indentSelection() {
         if (!hasSelection()) {
@@ -586,8 +543,6 @@ public final class ImguiCoreTextEditor {
             }
         }
     }
-
-    // ── Navigation ────────────────────────────────────────────────────────
 
     private void moveLeft(boolean select) {
         usePreferredColumn = false;
@@ -635,7 +590,7 @@ public final class ImguiCoreTextEditor {
             List<EditorGlyph> ln = lines.get(cursor.line);
             int c = cursor.column;
             while (c > 0 && !isWordChar(ln.get(c - 1).ch)) c--;
-            while (c > 0 &&  isWordChar(ln.get(c - 1).ch)) c--;
+            while (c > 0 && isWordChar(ln.get(c - 1).ch)) c--;
             cursor.column = c;
         }
         extendOrClear(old, select);
@@ -650,7 +605,7 @@ public final class ImguiCoreTextEditor {
         if (c == len && cursor.line < lines.size() - 1) { cursor.line++; cursor.column = 0; }
         else {
             while (c < len && !isWordChar(ln.get(c).ch)) c++;
-            while (c < len &&  isWordChar(ln.get(c).ch)) c++;
+            while (c < len && isWordChar(ln.get(c).ch)) c++;
             cursor.column = c;
         }
         extendOrClear(old, select);
@@ -685,7 +640,7 @@ public final class ImguiCoreTextEditor {
     private void moveDocEnd(boolean select) {
         usePreferredColumn = false;
         EditorCoordinates old = cursor.copy();
-        cursor.line   = lines.size() - 1;
+        cursor.line = lines.size() - 1;
         cursor.column = lineLen(cursor.line);
         extendOrClear(old, select);
     }
@@ -693,7 +648,7 @@ public final class ImguiCoreTextEditor {
     private void movePageUp(boolean select, float lineHeight) {
         int pageLines = Math.max(1, (int)(ImGui.getWindowHeight() / lineHeight) - 1);
         EditorCoordinates old = cursor.copy();
-        cursor.line   = Math.max(0, cursor.line - pageLines);
+        cursor.line = Math.max(0, cursor.line - pageLines);
         cursor.column = Math.min(cursor.column, lineLen(cursor.line));
         extendOrClear(old, select);
     }
@@ -701,12 +656,10 @@ public final class ImguiCoreTextEditor {
     private void movePageDown(boolean select, float lineHeight) {
         int pageLines = Math.max(1, (int)(ImGui.getWindowHeight() / lineHeight) - 1);
         EditorCoordinates old = cursor.copy();
-        cursor.line   = Math.min(lines.size() - 1, cursor.line + pageLines);
+        cursor.line = Math.min(lines.size() - 1, cursor.line + pageLines);
         cursor.column = Math.min(cursor.column, lineLen(cursor.line));
         extendOrClear(old, select);
     }
-
-    // ── Selection helpers ─────────────────────────────────────────────────
 
     private void selectAll() {
         selStart.set(0, 0);
@@ -736,7 +689,7 @@ public final class ImguiCoreTextEditor {
 
     private void setRawSelection(EditorCoordinates a, EditorCoordinates b) {
         if (a.lessThan(b) || a.equals(b)) { selStart.set(a); selEnd.set(b); }
-        else                              { selStart.set(b); selEnd.set(a); }
+        else { selStart.set(b); selEnd.set(a); }
     }
 
     private void clearSelection() {
@@ -747,9 +700,8 @@ public final class ImguiCoreTextEditor {
     }
 
     private boolean hasSelection() { return !selStart.equals(selEnd); }
-
     private EditorCoordinates normSelStart() { return selStart.lessThan(selEnd) ? selStart : selEnd; }
-    private EditorCoordinates normSelEnd()   { return selStart.lessThan(selEnd) ? selEnd   : selStart; }
+    private EditorCoordinates normSelEnd() { return selStart.lessThan(selEnd) ? selEnd : selStart; }
 
     private String selectedText() {
         if (!hasSelection()) return "";
@@ -765,8 +717,6 @@ public final class ImguiCoreTextEditor {
         }
         return sb.toString();
     }
-
-    // ── Undo / Redo ───────────────────────────────────────────────────────
 
     public void pushUndo() {
         undoStack.add(new EditorState(lines, cursor, selStart, selEnd));
@@ -797,8 +747,6 @@ public final class ImguiCoreTextEditor {
         resetBlink();
     }
 
-    // ── Geometry ──────────────────────────────────────────────────────────
-
     private float colX(int lineIdx, int col, float charWidth) {
         if (lineIdx >= lines.size()) return 0;
         List<EditorGlyph> ln = lines.get(lineIdx);
@@ -810,10 +758,6 @@ public final class ImguiCoreTextEditor {
         return x;
     }
 
-    private float lineWidth(int lineIdx, float charWidth) {
-        return colX(lineIdx, lineLen(lineIdx), charWidth);
-    }
-
     private static float nextTabStop(float x, float charWidth, int tabSize) {
         float tabW = charWidth * tabSize;
         return (float)((Math.floor(x / tabW) + 1) * tabW);
@@ -823,8 +767,8 @@ public final class ImguiCoreTextEditor {
         if (!drawCursorPosReady) return cursor.copy();
 
         ImVec2 mouse = ImGui.getMousePos();
-        float  sx    = ImGui.getScrollX();
-        float  sy    = ImGui.getScrollY();
+        float sx = ImGui.getScrollX();
+        float sy = ImGui.getScrollY();
 
         float relY = mouse.y - contentOrigin.y + sy;
         float relX = mouse.x - contentOrigin.x + sx - textStart;
@@ -846,20 +790,12 @@ public final class ImguiCoreTextEditor {
         return new EditorCoordinates(li, col);
     }
 
-    // ── Autocomplete helpers ──────────────────────────────────────────────
-
     private void updateAutocomplete() {
         if (autocomplete != null) {
             if (hasSelection()) { autocomplete.hide(); return; }
             autocomplete.update(cursor, lines);
         }
     }
-
-    private void hideAC() {
-        if (autocomplete != null) autocomplete.hide();
-    }
-
-    // ── Misc helpers ──────────────────────────────────────────────────────
 
     private int lineLen(int li) {
         return (li >= 0 && li < lines.size()) ? lines.get(li).size() : 0;
@@ -875,10 +811,10 @@ public final class ImguiCoreTextEditor {
             case '3': return '#'; case '4': return '$'; case '5': return '%';
             case '6': return '^'; case '7': return '&'; case '8': return '*';
             case '9': return '('; case '-': return '_'; case '=': return '+';
-            case '[': return '{'; case ']': return '}'; case '\\':return '|';
-            case ';': return ':'; case '\'':return '"'; case ',': return '<';
+            case '[': return '{'; case ']': return '}'; case '\\': return '|';
+            case ';': return ':'; case '\'': return '"'; case ',': return '<';
             case '.': return '>'; case '/': return '?'; case '`': return '~';
-            default:  return c;
+            default: return c;
         }
     }
 
@@ -890,6 +826,11 @@ public final class ImguiCoreTextEditor {
         @Override public void markLinesDirty(int s, int e) {}
         @Override public void invalidateAll() {}
         @Override public void colorizeLine(List<List<EditorGlyph>> l, int i) {}
-        @Override public int  getDefaultColor() { return DEF; }
+        @Override public int getDefaultColor() { return DEF; }
+    }
+
+    public static boolean isCursorToggled() {
+        Minecraft mc = Minecraft.getInstance();
+        return mc != null && !mc.mouseHandler.isMouseGrabbed();
     }
 }

@@ -1,46 +1,41 @@
 package foundry.imgui.api.text.editor;
 
+import foundry.imgui.api.text.ImGuiCoreTextEditor;
+import foundry.imgui.api.text.autocomplete.AutocompleteItem;
+import foundry.imgui.api.text.autocomplete.IAutocompleteProvider;
 import imgui.ImDrawList;
 import imgui.ImGui;
 import imgui.ImVec2;
 import imgui.flag.ImGuiKey;
-import net.soul.shade.impl.client.editor.text.ImguiCoreTextEditor;
-import net.soul.shade.impl.client.editor.text.autocomplete.AutocompleteItem;
-import net.soul.shade.impl.client.editor.text.autocomplete.IAutocompleteProvider;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Language-agnostic autocomplete popup for ImguiCoreTextEditor.
- * The popup floats on the foreground draw list so it's always on top.
- * Hovering it never steals keyboard focus from the editor.
- */
+// Autocomplete popup that floats on the foreground draw list.
+// Hovering it never steals keyboard focus from the editor.
 public final class EditorAutocomplete {
-
-    private static final int   MAX_VISIBLE = 8;
+    private static final int MAX_VISIBLE = 8;
     private static final float POPUP_WIDTH = 360f;
     private static final float ITEM_HEIGHT = 22f;
-    private static final float ICON_COL_W  = 26f;
+    private static final float ICON_COL_W = 26f;
 
-    // ABGR colours
-    private static final int COL_BG       = 0xF0191919;
-    private static final int COL_BORDER   = 0xFF3A3A3A;
+    // ABGR
+    private static final int COL_BG = 0xF0191919;
+    private static final int COL_BORDER = 0xFF3A3A3A;
     private static final int COL_SELECTED = 0xFF2A5A8A;
-    private static final int COL_HOVERED  = 0xFF244C74;
-    private static final int COL_TEXT     = 0xFFD4D4D4;
-    private static final int COL_TYPE     = 0xFF707070;
+    private static final int COL_HOVERED = 0xFF244C74;
+    private static final int COL_TEXT = 0xFFD4D4D4;
+    private static final int COL_TYPE = 0xFF707070;
     private static final int COL_SCROLLBG = 0x40FFFFFF;
     private static final int COL_SCROLLFG = 0x80FFFFFF;
 
     private boolean showPopup = false;
     private final List<AutocompleteItem> items = new ArrayList<>();
-    private int selectedIdx  = 0;
+    private int selectedIdx = 0;
     private int scrollOffset = 0;
-    private String prefix    = "";
+    private String prefix = "";
 
-    // Set each frame by ImguiCoreTextEditor so the popup knows where to flip.
-    private float editorPanelTop    = 0f;
+    private float editorPanelTop = 0f;
     private float editorPanelBottom = Float.MAX_VALUE;
 
     private final IAutocompleteProvider provider;
@@ -56,9 +51,9 @@ public final class EditorAutocomplete {
     public void hide() {
         showPopup = false;
         items.clear();
-        selectedIdx  = 0;
+        selectedIdx = 0;
         scrollOffset = 0;
-        prefix       = "";
+        prefix = "";
     }
 
     public void update(EditorCoordinates cursor, List<List<EditorGlyph>> lines) {
@@ -72,15 +67,15 @@ public final class EditorAutocomplete {
         prefix = word;
         items.clear();
         items.addAll(candidates);
-        selectedIdx  = 0;
+        selectedIdx = 0;
         scrollOffset = 0;
-        showPopup    = true;
+        showPopup = true;
     }
 
-    // Returns true if a key was consumed (don't forward to the editor).
+    // Returns true if a key was consumed and should not be forwarded to the editor.
     public boolean handleKeyboard(EditorCoordinates cursor,
                                   List<List<EditorGlyph>> lines,
-                                  ImguiCoreTextEditor editor) {
+                                  ImGuiCoreTextEditor editor) {
         if (!showPopup || items.isEmpty()) return false;
 
         if (ImGui.isKeyPressed(ImGuiKey.DownArrow)) {
@@ -104,17 +99,16 @@ public final class EditorAutocomplete {
         return false;
     }
 
-    // Returns true when the mouse is inside the popup (suppress editor scroll passthrough).
+    // Returns true when the mouse is inside the popup (suppresses editor scroll passthrough).
     public boolean isMouseOver(float charWidth, float lineHeight,
                                ImVec2 editorPos, EditorCoordinates cursor,
                                float textStart, float scrollY, float panelHeight) {
         if (!showPopup || items.isEmpty()) return false;
-        editorPanelTop    = editorPos.y;
+        editorPanelTop = editorPos.y;
         editorPanelBottom = editorPos.y + panelHeight;
         float[] rect = popupRect(charWidth, lineHeight, editorPos, cursor, textStart, scrollY);
         ImVec2 mp = ImGui.getMousePos();
-        return mp.x >= rect[0] && mp.x <= rect[2]
-                && mp.y >= rect[1] && mp.y <= rect[3];
+        return mp.x >= rect[0] && mp.x <= rect[2] && mp.y >= rect[1] && mp.y <= rect[3];
     }
 
     // Returns true if an item was accepted by click.
@@ -122,15 +116,14 @@ public final class EditorAutocomplete {
                           ImVec2 editorPos, EditorCoordinates cursor,
                           float textStart, float scrollY, float panelHeight,
                           List<List<EditorGlyph>> lines,
-                          ImguiCoreTextEditor editor) {
+                          ImGuiCoreTextEditor editor) {
         if (!showPopup || items.isEmpty()) return false;
 
-        editorPanelTop    = editorPos.y;
+        editorPanelTop = editorPos.y;
         editorPanelBottom = editorPos.y + panelHeight;
+
         float cursorScreenY = editorPos.y - scrollY + cursor.line * lineHeight;
-        if (cursorScreenY + lineHeight < editorPanelTop || cursorScreenY > editorPanelBottom) {
-            return false;
-        }
+        if (cursorScreenY + lineHeight < editorPanelTop || cursorScreenY > editorPanelBottom) return false;
 
         float[] rect = popupRect(charWidth, lineHeight, editorPos, cursor, textStart, scrollY);
         float x = rect[0], y = rect[1], x2 = rect[2], y2 = rect[3];
@@ -153,8 +146,8 @@ public final class EditorAutocomplete {
         clampScroll();
 
         boolean accepted = false;
-        float fontSize   = ImGui.getFontSize();
-        int visCount     = Math.min(items.size(), MAX_VISIBLE);
+        float fontSize = ImGui.getFontSize();
+        int visCount = Math.min(items.size(), MAX_VISIBLE);
 
         for (int i = 0; i < visCount; i++) {
             int idx = scrollOffset + i;
@@ -182,16 +175,16 @@ public final class EditorAutocomplete {
             tx += ICON_COL_W;
             dl.addText(tx, ty, COL_TEXT, item.text);
 
-            // Shift tag left when scrollbar is visible to avoid overlap
-            String tag         = item.type;
-            float  tagWidth    = ImGui.getFont().calcTextSizeA(fontSize * 0.85f, Float.MAX_VALUE, -1, tag).x;
-            float  tagRightPad = items.size() > MAX_VISIBLE ? 18f : 8f;
+            // Pull tag left when scrollbar is visible to avoid overlap.
+            String tag = item.type;
+            float tagWidth = ImGui.getFont().calcTextSizeA(fontSize * 0.85f, Float.MAX_VALUE, -1, tag).x;
+            float tagRightPad = items.size() > MAX_VISIBLE ? 18f : 8f;
             dl.addText(x2 - tagWidth - tagRightPad, ty, COL_TYPE, tag);
         }
 
         if (items.size() > MAX_VISIBLE) {
-            float sbX    = x2 - 6;
-            float sbH    = totalHeight - 4;
+            float sbX = x2 - 6;
+            float sbH = totalHeight - 4;
             float thumbH = (float) MAX_VISIBLE / items.size() * sbH;
             float maxOff = items.size() - MAX_VISIBLE;
             float thumbY = y + 2 + (scrollOffset / maxOff) * (sbH - thumbH);
@@ -202,9 +195,7 @@ public final class EditorAutocomplete {
         return accepted;
     }
 
-    private void accept(EditorCoordinates cursor,
-                        List<List<EditorGlyph>> lines,
-                        ImguiCoreTextEditor editor) {
+    private void accept(EditorCoordinates cursor, List<List<EditorGlyph>> lines, ImGuiCoreTextEditor editor) {
         if (items.isEmpty() || selectedIdx >= items.size()) { hide(); return; }
 
         editor.pushUndo();
@@ -212,7 +203,6 @@ public final class EditorAutocomplete {
         AutocompleteItem sel = items.get(selectedIdx);
         List<EditorGlyph> line = lines.get(cursor.line);
 
-        // Delete the prefix the user already typed
         for (int i = 0; i < prefix.length() && cursor.column > 0; i++) {
             line.remove(cursor.column - 1);
             cursor.column--;
@@ -239,32 +229,32 @@ public final class EditorAutocomplete {
         float cx = editorPos.x + textStart + cursor.column * charWidth;
         float cy = editorPos.y - scrollY + cursor.line * lineHeight;
 
-        int   vis  = Math.min(items.size(), MAX_VISIBLE);
-        float h    = vis * ITEM_HEIGHT + 4;
-        float w    = POPUP_WIDTH;
+        int vis = Math.min(items.size(), MAX_VISIBLE);
+        float h = vis * ITEM_HEIGHT + 4;
+        float w = POPUP_WIDTH;
 
-        ImVec2 ds  = ImGui.getIO().getDisplaySize();
+        ImVec2 ds = ImGui.getIO().getDisplaySize();
 
         float x = cx;
         float yBelow = cy + lineHeight;
         float yAbove = cy - h;
 
         if (x + w > ds.x - 4) x = ds.x - w - 4;
-        if (x < 4)             x = 4;
+        if (x < 4) x = 4;
 
         float y;
         float spaceBelow = editorPanelBottom - yBelow;
-        float spaceAbove = yAbove            - editorPanelTop;
+        float spaceAbove = yAbove - editorPanelTop;
 
-        if (spaceBelow >= h)            y = yBelow;
-        else if (spaceAbove >= h)       y = yAbove;
+        if (spaceBelow >= h) y = yBelow;
+        else if (spaceAbove >= h) y = yAbove;
         else if (spaceBelow >= spaceAbove) y = yBelow;
-        else                            y = yAbove;
+        else y = yAbove;
 
         if (y + h > ds.y - 4) y = ds.y - h - 4;
-        if (y < 4)             y = 4;
+        if (y < 4) y = 4;
 
-        return new float[]{ x, y, x + w, y + h };
+        return new float[]{x, y, x + w, y + h};
     }
 
     private void clampScroll() {
@@ -287,7 +277,7 @@ public final class EditorAutocomplete {
             case "variable":  return "V";
             case "constant":  return "C";
             case "qualifier": return "Q";
-            default:          return "·";
+            default:          return ".";
         }
     }
 

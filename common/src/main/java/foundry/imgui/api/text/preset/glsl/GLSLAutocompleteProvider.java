@@ -1,48 +1,47 @@
 package foundry.imgui.api.text.preset.glsl;
 
-import net.soul.shade.impl.client.editor.text.autocomplete.AutocompleteItem;
-import net.soul.shade.impl.client.editor.text.editor.EditorCoordinates;
-import net.soul.shade.impl.client.editor.text.editor.EditorGlyph;
-import net.soul.shade.impl.client.editor.text.autocomplete.FunctionSignature;
-import net.soul.shade.impl.client.editor.text.autocomplete.IAutocompleteProvider;
+import foundry.imgui.api.text.autocomplete.AutocompleteItem;
+import foundry.imgui.api.text.autocomplete.FunctionSignature;
+import foundry.imgui.api.text.autocomplete.IAutocompleteProvider;
+import foundry.imgui.api.text.editor.EditorCoordinates;
+import foundry.imgui.api.text.editor.EditorGlyph;
 
 import java.util.*;
 
 public final class GLSLAutocompleteProvider implements IAutocompleteProvider {
-
     private static final List<FunctionSignature> SIGS = Arrays.asList(
-            new FunctionSignature("sin",         "float", "float angle"),
-            new FunctionSignature("cos",         "float", "float angle"),
-            new FunctionSignature("tan",         "float", "float angle"),
-            new FunctionSignature("pow",         "float", "float x, float y"),
-            new FunctionSignature("sqrt",        "float", "float x"),
-            new FunctionSignature("abs",         "float", "float x"),
-            new FunctionSignature("min",         "float", "float x, float y"),
-            new FunctionSignature("max",         "float", "float x, float y"),
-            new FunctionSignature("clamp",       "float", "float x, float minVal, float maxVal"),
-            new FunctionSignature("mix",         "float", "float x, float y, float a"),
-            new FunctionSignature("step",        "float", "float edge, float x"),
-            new FunctionSignature("smoothstep",  "float", "float edge0, float edge1, float x"),
-            new FunctionSignature("length",      "float", "vec2 x"),
-            new FunctionSignature("distance",    "float", "vec2 p0, vec2 p1"),
-            new FunctionSignature("dot",         "float", "vec2 x, vec2 y"),
-            new FunctionSignature("cross",       "vec3",  "vec3 x, vec3 y"),
-            new FunctionSignature("normalize",   "vec2",  "vec2 x"),
-            new FunctionSignature("reflect",     "vec2",  "vec2 I, vec2 N"),
-            new FunctionSignature("refract",     "vec2",  "vec2 I, vec2 N, float eta"),
-            new FunctionSignature("texture",     "vec4",  "sampler2D sampler, vec2 coord"),
-            new FunctionSignature("texture2D",   "vec4",  "sampler2D sampler, vec2 coord"),
-            new FunctionSignature("dFdx",        "float", "float p"),
-            new FunctionSignature("dFdy",        "float", "float p"),
-            new FunctionSignature("fwidth",      "float", "float p"),
-            new FunctionSignature("floor",       "float", "float x"),
-            new FunctionSignature("ceil",        "float", "float x"),
-            new FunctionSignature("fract",       "float", "float x"),
-            new FunctionSignature("mod",         "float", "float x, float y"),
-            new FunctionSignature("exp",         "float", "float x"),
-            new FunctionSignature("log",         "float", "float x"),
-            new FunctionSignature("exp2",        "float", "float x"),
-            new FunctionSignature("log2",        "float", "float x"),
+            new FunctionSignature("sin", "float", "float angle"),
+            new FunctionSignature("cos", "float", "float angle"),
+            new FunctionSignature("tan", "float", "float angle"),
+            new FunctionSignature("pow", "float", "float x, float y"),
+            new FunctionSignature("sqrt", "float", "float x"),
+            new FunctionSignature("abs", "float", "float x"),
+            new FunctionSignature("min", "float", "float x, float y"),
+            new FunctionSignature("max", "float", "float x, float y"),
+            new FunctionSignature("clamp", "float", "float x, float minVal, float maxVal"),
+            new FunctionSignature("mix", "float", "float x, float y, float a"),
+            new FunctionSignature("step", "float", "float edge, float x"),
+            new FunctionSignature("smoothstep", "float", "float edge0, float edge1, float x"),
+            new FunctionSignature("length", "float", "vec2 x"),
+            new FunctionSignature("distance", "float", "vec2 p0, vec2 p1"),
+            new FunctionSignature("dot", "float", "vec2 x, vec2 y"),
+            new FunctionSignature("cross", "vec3", "vec3 x, vec3 y"),
+            new FunctionSignature("normalize", "vec2", "vec2 x"),
+            new FunctionSignature("reflect", "vec2", "vec2 I, vec2 N"),
+            new FunctionSignature("refract", "vec2", "vec2 I, vec2 N, float eta"),
+            new FunctionSignature("texture", "vec4", "sampler2D sampler, vec2 coord"),
+            new FunctionSignature("texture2D", "vec4", "sampler2D sampler, vec2 coord"),
+            new FunctionSignature("dFdx", "float", "float p"),
+            new FunctionSignature("dFdy", "float", "float p"),
+            new FunctionSignature("fwidth", "float", "float p"),
+            new FunctionSignature("floor", "float", "float x"),
+            new FunctionSignature("ceil", "float", "float x"),
+            new FunctionSignature("fract", "float", "float x"),
+            new FunctionSignature("mod", "float", "float x, float y"),
+            new FunctionSignature("exp", "float", "float x"),
+            new FunctionSignature("log", "float", "float x"),
+            new FunctionSignature("exp2", "float", "float x"),
+            new FunctionSignature("log2", "float", "float x"),
             new FunctionSignature("inversesqrt", "float", "float x")
     );
 
@@ -52,8 +51,8 @@ public final class GLSLAutocompleteProvider implements IAutocompleteProvider {
         this.colorizer = colorizer;
     }
 
-    @Override public int     minPrefixLength() { return 2; }
-    @Override public boolean appendParens()    { return true; }
+    @Override public int minPrefixLength() { return 2; }
+    @Override public boolean appendParens() { return true; }
 
     @Override
     public boolean shouldSuppress(String prefix, List<List<EditorGlyph>> lines, EditorCoordinates cursor) {

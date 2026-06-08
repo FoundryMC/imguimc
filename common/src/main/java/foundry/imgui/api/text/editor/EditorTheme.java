@@ -1,39 +1,33 @@
 package foundry.imgui.api.text.editor;
 
-/**
- * All visual properties in one place. Colours are ImGui ABGR packed ints.
- *
- * Usage:
- *   EditorTheme theme = EditorTheme.dark().withCursorColor(0xFF00FFFF).build();
- */
+// All colours are ImGui ABGR packed ints.
 public final class EditorTheme {
-
-    public final int   backgroundColor;
-    public final int   currentLineColor;
-    public final int   selectionColor;
-    public final int   cursorColor;
-    public final int   cursorBlinkMs;     // 0 = no blink
+    public final int backgroundColor;
+    public final int currentLineColor;
+    public final int selectionColor;
+    public final int cursorColor;
+    public final int cursorBlinkMs; // 0 = no blink
     public final float cursorWidth;
-    public final int   lineNumberColor;
-    public final int   gutterSeparatorColor;
+    public final int lineNumberColor;
+    public final int gutterSeparatorColor;
     public final float gutterPaddingRight;
     public final float hScrollbarHeight;
     public final float lineSpacing;
-    public final int   tabSize;
+    public final int tabSize;
 
     private EditorTheme(Builder b) {
-        this.backgroundColor    = b.backgroundColor;
-        this.currentLineColor   = b.currentLineColor;
-        this.selectionColor     = b.selectionColor;
-        this.cursorColor        = b.cursorColor;
-        this.cursorBlinkMs      = b.cursorBlinkMs;
-        this.cursorWidth        = b.cursorWidth;
-        this.lineNumberColor    = b.lineNumberColor;
+        this.backgroundColor = b.backgroundColor;
+        this.currentLineColor = b.currentLineColor;
+        this.selectionColor = b.selectionColor;
+        this.cursorColor = b.cursorColor;
+        this.cursorBlinkMs = b.cursorBlinkMs;
+        this.cursorWidth = b.cursorWidth;
+        this.lineNumberColor = b.lineNumberColor;
         this.gutterSeparatorColor = b.gutterSeparatorColor;
         this.gutterPaddingRight = b.gutterPaddingRight;
-        this.hScrollbarHeight   = b.hScrollbarHeight;
-        this.lineSpacing        = b.lineSpacing;
-        this.tabSize            = b.tabSize;
+        this.hScrollbarHeight = b.hScrollbarHeight;
+        this.lineSpacing = b.lineSpacing;
+        this.tabSize = b.tabSize;
     }
 
     public static Builder dark() {
@@ -180,56 +174,56 @@ public final class EditorTheme {
                 .withTabSize(4);
     }
 
-    public EditorTheme withCursorColor(int c)      { return toBuilder().withCursorColor(c).build(); }
-    public EditorTheme withSelectionColor(int c)   { return toBuilder().withSelectionColor(c).build(); }
-    public EditorTheme withBackgroundColor(int c)  { return toBuilder().withBackgroundColor(c).build(); }
-    public EditorTheme withLineNumberColor(int c)  { return toBuilder().withLineNumberColor(c).build(); }
-    public EditorTheme withLineSpacing(float s)    { return toBuilder().withLineSpacing(s).build(); }
-    public EditorTheme withTabSize(int t)          { return toBuilder().withTabSize(t).build(); }
+    public EditorTheme withCursorColor(int c) { return toBuilder().withCursorColor(c).build(); }
+    public EditorTheme withSelectionColor(int c) { return toBuilder().withSelectionColor(c).build(); }
+    public EditorTheme withBackgroundColor(int c) { return toBuilder().withBackgroundColor(c).build(); }
+    public EditorTheme withLineNumberColor(int c) { return toBuilder().withLineNumberColor(c).build(); }
+    public EditorTheme withLineSpacing(float s) { return toBuilder().withLineSpacing(s).build(); }
+    public EditorTheme withTabSize(int t) { return toBuilder().withTabSize(t).build(); }
 
     private Builder toBuilder() {
         Builder b = new Builder();
-        b.backgroundColor    = backgroundColor;
-        b.currentLineColor   = currentLineColor;
-        b.selectionColor     = selectionColor;
-        b.cursorColor        = cursorColor;
-        b.cursorBlinkMs      = cursorBlinkMs;
-        b.cursorWidth        = cursorWidth;
-        b.lineNumberColor    = lineNumberColor;
+        b.backgroundColor = backgroundColor;
+        b.currentLineColor = currentLineColor;
+        b.selectionColor = selectionColor;
+        b.cursorColor = cursorColor;
+        b.cursorBlinkMs = cursorBlinkMs;
+        b.cursorWidth = cursorWidth;
+        b.lineNumberColor = lineNumberColor;
         b.gutterSeparatorColor = gutterSeparatorColor;
         b.gutterPaddingRight = gutterPaddingRight;
-        b.hScrollbarHeight   = hScrollbarHeight;
-        b.lineSpacing        = lineSpacing;
-        b.tabSize            = tabSize;
+        b.hScrollbarHeight = hScrollbarHeight;
+        b.lineSpacing = lineSpacing;
+        b.tabSize = tabSize;
         return b;
     }
 
     public static final class Builder {
-        private int   backgroundColor    = 0xB2120D0A;
-        private int   currentLineColor   = 0x18FFFFFF;
-        private int   selectionColor     = 0x804060C0;
-        private int   cursorColor        = 0xFFE0E0E0;
-        private int   cursorBlinkMs      = 1000;
-        private float cursorWidth        = 2f;
-        private int   lineNumberColor    = 0xFF858585;
-        private int   gutterSeparatorColor = 0xFF2A2A2A;
+        private int backgroundColor = 0xB2120D0A;
+        private int currentLineColor = 0x18FFFFFF;
+        private int selectionColor = 0x804060C0;
+        private int cursorColor = 0xFFE0E0E0;
+        private int cursorBlinkMs = 1000;
+        private float cursorWidth = 2f;
+        private int lineNumberColor = 0xFF858585;
+        private int gutterSeparatorColor = 0xFF2A2A2A;
         private float gutterPaddingRight = 10f;
-        private float hScrollbarHeight   = 10f;
-        private float lineSpacing        = 1.0f;
-        private int   tabSize            = 4;
+        private float hScrollbarHeight = 10f;
+        private float lineSpacing = 1.0f;
+        private int tabSize = 4;
 
-        public Builder withBackgroundColor(int c)       { backgroundColor    = c; return this; }
-        public Builder withCurrentLineColor(int c)      { currentLineColor   = c; return this; }
-        public Builder withSelectionColor(int c)        { selectionColor     = c; return this; }
-        public Builder withCursorColor(int c)           { cursorColor        = c; return this; }
-        public Builder withCursorBlinkMs(int ms)        { cursorBlinkMs      = ms; return this; }
-        public Builder withCursorWidth(float w)         { cursorWidth        = w; return this; }
-        public Builder withLineNumberColor(int c)       { lineNumberColor    = c; return this; }
-        public Builder withGutterSeparatorColor(int c)  { gutterSeparatorColor = c; return this; }
-        public Builder withGutterPaddingRight(float p)  { gutterPaddingRight = p; return this; }
-        public Builder withHScrollbarHeight(float h)    { hScrollbarHeight   = h; return this; }
-        public Builder withLineSpacing(float s)         { lineSpacing        = s; return this; }
-        public Builder withTabSize(int t)               { tabSize            = t; return this; }
+        public Builder withBackgroundColor(int c) { backgroundColor = c; return this; }
+        public Builder withCurrentLineColor(int c) { currentLineColor = c; return this; }
+        public Builder withSelectionColor(int c) { selectionColor = c; return this; }
+        public Builder withCursorColor(int c) { cursorColor = c; return this; }
+        public Builder withCursorBlinkMs(int ms) { cursorBlinkMs = ms; return this; }
+        public Builder withCursorWidth(float w) { cursorWidth = w; return this; }
+        public Builder withLineNumberColor(int c) { lineNumberColor = c; return this; }
+        public Builder withGutterSeparatorColor(int c) { gutterSeparatorColor = c; return this; }
+        public Builder withGutterPaddingRight(float p) { gutterPaddingRight = p; return this; }
+        public Builder withHScrollbarHeight(float h) { hScrollbarHeight = h; return this; }
+        public Builder withLineSpacing(float s) { lineSpacing = s; return this; }
+        public Builder withTabSize(int t) { tabSize = t; return this; }
 
         public EditorTheme build() { return new EditorTheme(this); }
     }
