@@ -13,13 +13,13 @@ configurations {
 }
 
 dependencies {
-    compileOnly(project(":common:${sc.current.version}")) {
+    compileOnly(project(":common:${findProperty("deps.common")}")) {
         capabilities {
             requireCapability "${rootProject.property("mod.group")}:${rootProject.property("mod.id")}"
         }
     }
-    commonJava project(path: ":common:${sc.current.version}", configuration: "commonJava")
-    commonResources project(path: ":common:${sc.current.version}", configuration: "commonResources")
+    commonJava project(path: ":common:${findProperty("deps.common")}", configuration: "commonJava")
+    commonResources project(path: ":common:${findProperty("deps.common")}", configuration: "commonResources")
 }
 
 tasks.named('compileJava', JavaCompile) {
@@ -28,7 +28,7 @@ tasks.named('compileJava', JavaCompile) {
 }
 
 processResources {
-    dependsOn(project(":common:${sc.current.version}").tasks.getByName("stonecutterGenerate"))
+    dependsOn(project(":common:${findProperty("deps.common")}").tasks.getByName("stonecutterGenerate"))
     dependsOn(configurations.commonResources)
     from(configurations.commonResources)
 
@@ -54,7 +54,7 @@ processResources {
 }
 
 tasks.named('sourcesJar', Jar) {
-    dependsOn(project(":common:${sc.current.version}").tasks.getByName("stonecutterGenerate"))
+    dependsOn(project(":common:${findProperty("deps.common")}").tasks.getByName("stonecutterGenerate"))
     dependsOn(configurations.commonJava)
     from(configurations.commonJava)
     dependsOn(configurations.commonResources)
@@ -64,7 +64,7 @@ tasks.named('sourcesJar', Jar) {
 publishMods {
     def isNeoforge = project.parent.name == "neoforge"
     def isFabric = project.parent.name == "fabric"
-    def isMappedFabric = project.parent.name == "fabric-mapped"
+    def isMappedFabric = isFabric && sc.current.parsed < "26.1"
     def isSnapshot = sc.current.version.contains("snapshot")
 
     assert isNeoforge || isFabric || isMappedFabric
@@ -83,7 +83,7 @@ publishMods {
     changelog = changelogFile.text
 
     version = project.version
-    displayName = "${property("mod.name")} $loaderName ${rootProject.property("mod.version")} for mc${property("mod.mc_title")}"
+    displayName = "${rootProject.property("mod.name")} $loaderName ${rootProject.property("mod.version")} for mc${property("mod.mc_title")}"
     modLoaders.add(project.parent.name.split("-")[0])
 
     // Curseforge doesn't support 26.2 yet

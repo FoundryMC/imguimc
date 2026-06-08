@@ -1,9 +1,9 @@
 package foundry.imgui.mixin.renderer.v1;
 
-//? if >=1.21.6 {
+//? if =1.21.5 {
 
-/*import com.mojang.blaze3d.textures.GpuTextureView;
-import foundry.imgui.api.ImGuiMC;
+/*import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.textures.GpuTexture;
 import foundry.imgui.api.ImGuiTextureProvider;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,16 +13,16 @@ import org.spongepowered.asm.mixin.Shadow;
 public abstract class AbstractTextureMixin implements ImGuiTextureProvider {
 
     @Shadow
-    public abstract GpuTextureView getTextureView();
+    public abstract GpuTexture getTexture();
 
     @Override
     public long imguimc$id() {
-        return ImGuiMC.getTexture(this.getTextureView()).imguimc$id();
+        return ((GlTexture) this.getTexture()).glId();
     }
 
     @Override
     public void imguimc$setId(final long id) {
-        ImGuiMC.getTexture(this.getTextureView()).imguimc$setId(id);
+        throw new UnsupportedOperationException();
     }
 }
 

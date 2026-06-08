@@ -1,27 +1,28 @@
 package foundry.imgui.impl;
 
+import static org.lwjgl.glfw.GLFW.*;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import foundry.imgui.impl.font.ImGuiFontManager;
 import foundry.imgui.impl.platform.ImGuiMCPlatform;
 import foundry.imgui.impl.renderer.ImGuiRenderer;
 import imgui.ImGui;
+import imgui.ImGuiPlatformIO;
+import imgui.ImGuiViewport;
 import imgui.extension.implot.ImPlot;
 import imgui.extension.implot.ImPlotContext;
 import imgui.flag.ImGuiConfigFlags;
+import imgui.flag.ImGuiViewportFlags;
 import imgui.internal.ImGuiContext;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.ApiStatus;
-
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
-import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
 
 @ApiStatus.Internal
 public class ImGuiHandler {
 
-    private final long mainWindow;
+    private final Window mainWindow;
     private final ImGuiWindowImpl windowImpl;
     private final ImGuiRenderer rendererImpl;
     private final ImGuiFontManager fontManager;
@@ -29,8 +30,9 @@ public class ImGuiHandler {
     private final ImPlotContext imPlotContext;
     private final AtomicBoolean active;
     private final AtomicBoolean fontsDirty;
+    private long frame;
 
-    public ImGuiHandler(final long mainWindow) {
+    public ImGuiHandler(final Window mainWindow) {
         this.mainWindow = mainWindow;
         this.windowImpl = new ImGuiWindowImpl(this);
         this.rendererImpl = ImGuiMCPlatform.INSTANCE.createRenderer();
@@ -44,8 +46,25 @@ public class ImGuiHandler {
             imPlotContext = ImPlot.createContext();
             this.active = new AtomicBoolean();
             this.fontsDirty = new AtomicBoolean();
+            ImGuiMCPlatform.INSTANCE.imGuiLoadPre();
             this.rendererImpl.init();
-            this.windowImpl.init(mainWindow, true);
+            //? if >=1.21.6 {
+            /*//? if >=26.2-pre-2 {
+            /^final String backendName = RenderSystem.getDevice().getDeviceInfo().backendName().toLowerCase(java.util.Locale.ROOT);
+            ^///? } else {
+            final String backendName = RenderSystem.getDevice().getBackendName().toLowerCase(java.util.Locale.ROOT);
+             //? }
+            if (backendName.contains("vulkan")) {
+                this.windowImpl.initForVulkan(mainWindow, true);
+            } else if (backendName.contains("opengl")) {
+                this.windowImpl.initForOpenGL(mainWindow, true);
+            } else {
+                this.windowImpl.initForOther(mainWindow, true);
+            }
+            *///? } else {
+            this.windowImpl.initForOpenGL(mainWindow, true);
+            //? }
+            ImGuiMCPlatform.INSTANCE.imGuiLoadPost();
 
             // TODO style sheet init event
 //            VeilImGuiStylesheet.initStyles();
@@ -88,14 +107,9 @@ public class ImGuiHandler {
 
     public void beginFrame() {
         try {
-            //? if <= 26.1 {
-            final RenderTarget renderTarget = Minecraft.getInstance().getMainRenderTarget();
-            //? } else {
-            /*final RenderTarget renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
-             *///? }
-
             this.start();
 
+            this.frame++;
             if (this.active.get()) {
                 ImGuiMCImpl.LOGGER.error("ImGui failed to render previous frame, disposing");
                 ImGui.endFrame();
@@ -106,7 +120,8 @@ public class ImGuiHandler {
                 this.rendererImpl.recreateFontsTexture();
             }
             this.rendererImpl.newFrame();
-            this.windowImpl.newFrame(renderTarget);
+            this.windowImpl.newFrame(ImGuiMCImpl.getMainRenderTarget());
+            ImGui.getStyle().setFontScaleMain((float) Math.max(ImGuiFontManager.getFontScale(), Minecraft.getInstance().getWindow().getGuiScale() / 2.0));
             ImGui.newFrame();
 
             ImGuiMCPlatform.INSTANCE.drawImGuiPre();
@@ -125,40 +140,75 @@ public class ImGuiHandler {
             }
 
             this.start();
-
+            this.active.set(false);
             ImGuiMCPlatform.INSTANCE.drawImGuiPost();
 
-            this.active.set(false);
-
-            //? if <= 26.1 {
-            final RenderTarget renderTarget = Minecraft.getInstance().getMainRenderTarget();
-            //? } else {
-            /*final RenderTarget renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
-             *///? }
-
-            //? if >=1.21.6 {
-            /*final com.mojang.blaze3d.textures.GpuTextureView view = renderTarget.getColorTextureView();
-            final int framebufferWidth = view.getWidth(0);
-            final int framebufferHeight = view.getHeight(0);
-            *///? } else {
-            final int framebufferWidth = renderTarget.width;
-            final int framebufferHeight = renderTarget.height;
-            //? }
-
             ImGui.render();
-            if (this.windowImpl.isCorrectSize(framebufferWidth, framebufferHeight)) {
-                this.rendererImpl.renderDrawData(ImGui.getDrawData(), renderTarget);
-            }
+            final RenderTarget renderTarget = ImGuiMCImpl.getMainRenderTarget();
+            this.rendererImpl.renderDrawData(ImGui.getDrawData(), renderTarget);
+            this.rendererImpl.renderPlatformWindows(renderTarget);
+        } finally {
+            this.stop();
+        }
+    }
 
+    public void swapBuffers() {
+        try {
+            this.start();
             if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
-                final long backupWindowPtr = glfwGetCurrentContext();
-                ImGui.updatePlatformWindows();
-                ImGui.renderPlatformWindowsDefault();
-                glfwMakeContextCurrent(backupWindowPtr);
+                final ImGuiPlatformIO platformIO = ImGui.getPlatformIO();
+                final int viewportsSize = platformIO.getViewportsSize();
+                for (int i = 1; i < viewportsSize; i++) {
+                    final ImGuiViewport viewport = platformIO.getViewports(i);
+                    if (viewport.hasFlags(ImGuiViewportFlags.IsMinimized)) {
+                        continue;
+                    }
+
+                    this.swapBuffers(viewport);
+                }
             }
         } finally {
-            ImGuiStateStack.forcePop();
+            this.stop();
         }
+    }
+
+    private void swapBuffers(final ImGuiViewport viewport) {
+        if (viewport.isNotValidPtr()) {
+            return;
+        }
+
+        //? if >=26.2-pre-2 {
+        /*final com.mojang.blaze3d.systems.GpuSurface windowSurface = ImGuiWindowImpl.getSurface(viewport);
+        if (windowSurface == null || !windowSurface.isAcquired()) {
+            return;
+        }
+        *///? }
+
+        final ImGuiWindowImpl.GlfwClientApi clientApi = this.windowImpl.getClientApi();
+        final long window = viewport.getPlatformHandle();
+
+        //? if >= 26.2-pre-2 {
+        /*final long oldContext;
+        if (clientApi == ImGuiWindowImpl.GlfwClientApi.OPENGL) {
+            oldContext = glfwGetCurrentContext();
+            glfwMakeContextCurrent(window);
+        } else {
+            oldContext = 0;
+        }
+
+        windowSurface.present();
+
+        if (clientApi == ImGuiWindowImpl.GlfwClientApi.OPENGL) {
+            glfwMakeContextCurrent(oldContext);
+        }
+        *///? } else {
+        if (clientApi == ImGuiWindowImpl.GlfwClientApi.OPENGL) {
+            final long oldContext = glfwGetCurrentContext();
+            glfwMakeContextCurrent(window);
+            glfwSwapBuffers(window);
+            glfwMakeContextCurrent(oldContext);
+        }
+        //? }
     }
 
     public void updateFonts() {
@@ -174,6 +224,10 @@ public class ImGuiHandler {
     }
 
     public long getWindow() {
-        return this.mainWindow;
+        return ImGuiMCImpl.getWindowHandle(this.mainWindow);
+    }
+
+    public long getFrame() {
+        return this.frame;
     }
 }

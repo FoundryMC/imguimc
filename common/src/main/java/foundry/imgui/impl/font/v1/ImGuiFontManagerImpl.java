@@ -2,7 +2,8 @@ package foundry.imgui.impl.font.v1;
 
 //? if >=1.21.4 {
 
-/*import foundry.imgui.api.ImGuiMC;
+/*import static org.lwjgl.glfw.GLFW.*;
+import foundry.imgui.api.ImGuiMC;
 import foundry.imgui.impl.ImGuiMCImpl;
 import foundry.imgui.impl.font.ImGuiFontManager;
 import foundry.imgui.impl.platform.ImGuiMCPlatform;
@@ -19,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.NativeResource;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.FloatBuffer;
@@ -27,8 +27,6 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-
-import static org.lwjgl.glfw.GLFW.*;
 
 @ApiStatus.Internal
 public class ImGuiFontManagerImpl implements ImGuiFontManager {
@@ -63,14 +61,25 @@ public class ImGuiFontManagerImpl implements ImGuiFontManager {
         }
     }
 
+    //? if >=1.21.9 {
+    /^@NotNull
+    @Override
+    public CompletableFuture<Void> reload(
+            final @NotNull SharedState sharedState,
+            final @NotNull Executor executor,
+            final @NotNull PreparationBarrier preparationBarrier,
+            final @NotNull Executor applyExecutor) {
+        final ResourceManager resourceManager = sharedState.resourceManager();
+        ^///?} else {
     @NotNull
     @Override
-            //? if <=1.21.8 {
-    public CompletableFuture<Void> reload(final PreparationBarrier preparationBarrier, @NotNull final ResourceManager resourceManager, @NotNull final Executor executor, @NotNull final Executor applyExecutor) {
-        //?} else {
-    /^public CompletableFuture<Void> reload(final @NotNull SharedState sharedState, final @NotNull Executor executor, final @NotNull PreparationBarrier preparationBarrier, final @NotNull Executor applyExecutor) {
-        final ResourceManager resourceManager = sharedState.resourceManager();
-    ^///?}
+    public CompletableFuture<Void> reload(
+            final PreparationBarrier preparationBarrier,
+            @NotNull final ResourceManager resourceManager,
+            @NotNull final Executor executor,
+            @NotNull final Executor applyExecutor) {
+        //?}
+
         return CompletableFuture.supplyAsync(() -> {
             final Map<ResourceLocation, FontData> fontData = new HashMap<>();
 
@@ -114,8 +123,7 @@ public class ImGuiFontManagerImpl implements ImGuiFontManager {
                     case "regular" -> fontBuilders.computeIfAbsent(name, FontPackBuilder::new).main = entry.getValue();
                     case "italic" -> fontBuilders.computeIfAbsent(name, FontPackBuilder::new).italic = entry.getValue();
                     case "bold" -> fontBuilders.computeIfAbsent(name, FontPackBuilder::new).bold = entry.getValue();
-                    case "bold_italic" ->
-                            fontBuilders.computeIfAbsent(name, FontPackBuilder::new).boldItalic = entry.getValue();
+                    case "bold_italic" -> fontBuilders.computeIfAbsent(name, FontPackBuilder::new).boldItalic = entry.getValue();
                     default -> ImGuiMCImpl.LOGGER.warn("Unknown font type {} for font: {}", type, name);
                 }
             }
@@ -140,8 +148,9 @@ public class ImGuiFontManagerImpl implements ImGuiFontManager {
             glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), xscale, yscale);
 
             scale = Math.max(xscale.get(0), yscale.get(0));
-            // Hack because macs seem to report massive values for some reason
-            if (glfwGetPlatform() == GLFW_PLATFORM_COCOA) {
+            // Hack because macs and wayland seem to report massive values for some reason
+            final int platform = glfwGetPlatform();
+            if (platform == GLFW_PLATFORM_COCOA || platform == GLFW_PLATFORM_WAYLAND) {
                 scale /= 2;
             }
             scale = Math.max(1.0F, scale);
@@ -219,6 +228,7 @@ public class ImGuiFontManagerImpl implements ImGuiFontManager {
                 final float sizePixels = data.size * scale;
                 fontConfig.setGlyphRanges(data.ranges);
                 fontConfig.setName(this.name.getPath() + " " + type + " " + FONT_FORMAT.format(sizePixels) + " px");
+                fontConfig.setPixelSnapH(true);
                 return ImGui.getIO().getFonts().addFontFromMemoryTTF(data.bytes, sizePixels, fontConfig);
             }
         }

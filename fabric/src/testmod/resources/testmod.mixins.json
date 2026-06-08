@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "foundry.imguitest.mixin",
+  "refmap": "testmod.refmap.json",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "GlDeviceMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
+

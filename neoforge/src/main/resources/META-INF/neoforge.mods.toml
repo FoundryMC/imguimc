@@ -30,16 +30,6 @@ ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.${id}]]
-modId = "axiom"
-type = "incompatible"
-reason = "ImGui implementation conflict"
-
-[[dependencies.${id}]]
-modId = "flashback"
-type = "incompatible"
-reason = "ImGui implementation conflict"
-
-[[dependencies.${id}]]
 modId = "veil"
 type = "incompatible"
 versionRange = "[,4.0.0)"

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "${id}-testmod",
+  "version": "${version}",
+  "name": "${name} TestMod",
+  "authors": [
+    "${author}"
+  ],
+  "contact": {
+    "issues": "https://github.com/Ocelot5836/imguimc/issues",
+    "sources": "https://github.com/Ocelot5836/imguimc"
+  },
+  "license": "${license}",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "foundry.imguitest.ImGuiTestMod"
+    ]
+  },
+  "mixins": [
+    "testmod.mixins.json"
+  ],
+  "depends": {
+    "fabric-api-base": "*",
+    "fabricloader": ">=0.17",
+    "minecraft": "${minecraft}",
+    "java": ">=${java}",
+    "${id}": "*"
+  }
+}

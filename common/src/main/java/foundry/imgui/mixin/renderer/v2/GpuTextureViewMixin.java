@@ -1,4 +1,4 @@
-package foundry.imgui.mixin.renderer.v1;
+package foundry.imgui.mixin.renderer.v2;
 
 //? if >=1.21.6 {
 

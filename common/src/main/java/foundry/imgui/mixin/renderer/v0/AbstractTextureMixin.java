@@ -1,6 +1,6 @@
 package foundry.imgui.mixin.renderer.v0;
 
-//? if <1.21.6 {
+//? if <1.21.5 {
 
 import foundry.imgui.api.ImGuiTextureProvider;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -20,6 +20,7 @@ public abstract class AbstractTextureMixin implements ImGuiTextureProvider {
 
     @Override
     public void imguimc$setId(final long id) {
+        throw new UnsupportedOperationException();
     }
 }
 

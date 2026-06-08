@@ -1,6 +1,6 @@
-package foundry.imgui.mixin.renderer.v1;
+package foundry.imgui.mixin.renderer.v2;
 
-//? if >=1.21.6 {
+//? if >=1.21.11 {
 
 /*import com.mojang.blaze3d.textures.GpuSampler;
 import foundry.imgui.api.ImGuiSampler;

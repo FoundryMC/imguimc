@@ -4,6 +4,7 @@ import foundry.imgui.api.ImGuiMC;
 import imgui.ImFont;
 import imgui.ImFontAtlas;
 import net.neoforged.bus.api.Event;
+import net.neoforged.fml.event.IModBusEvent;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -12,7 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
  * @see ImGuiMC#rebuildFonts()
  * @since 1.0.0
  */
-public final class RegisterImGuiFontsEventNeoforge extends Event {
+public final class RegisterImGuiFontsEventNeoforge extends Event implements IModBusEvent {
 
     private final ImFontAtlas atlas;
     private final ImFont defaultFont;

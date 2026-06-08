@@ -9,13 +9,18 @@ import foundry.imgui.api.ImGuiMC;
  */
 public final class RenderImGuiEvents {
 
+    private RenderImGuiEvents() {
+    }
+
     /**
      * Called right after the frame starts.
      */
     public interface Pre {
 
         /**
-         * Draws ImGui elements first. The context is already current, so there's no need to call {@link ImGuiMC#withImGui}
+         * Draws ImGui elements first.
+         * <br>
+         * The context is already current, so there's no need to call {@link ImGuiMC#withImGui}
          */
         void drawImGuiPre();
     }
@@ -26,7 +31,9 @@ public final class RenderImGuiEvents {
     public interface Post {
 
         /**
-         * Draws ImGui elements last. The context is already current, so there's no need to call {@link ImGuiMC#withImGui}
+         * Draws ImGui elements last.
+         * <br>
+         * The context is already current, so there's no need to call {@link ImGuiMC#withImGui}
          */
         void drawImGuiPost();
     }
