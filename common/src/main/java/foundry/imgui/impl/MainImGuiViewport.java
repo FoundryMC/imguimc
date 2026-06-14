@@ -67,14 +67,13 @@ public class MainImGuiViewport {
                 this.mainWindowSize.set(w.get(0), h.get(0));
             }
 
+            ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0, 0);
             if (ImGui.begin("Viewport")) {
                 this.mainViewportVisible = true;
 
-                ImGui.pushStyleVar(ImGuiStyleVar.WindowPadding, 0, 0);
                 final float width = ImGui.getContentRegionAvailX();
                 final float height = ImGui.getContentRegionAvailY();
                 ImGuiMC.image(ImGuiMC.getColorTexture(renderTarget), width, height, 0, 1, 1, 0);
-                ImGui.popStyleVar();
 
                 this.cursorOrigin.set(ImGui.getItemRectMinX(), ImGui.getItemRectMinY());
 
@@ -93,6 +92,7 @@ public class MainImGuiViewport {
                 this.size.set(this.mainWindowSize);
             }
             ImGui.end();
+            ImGui.popStyleVar();
 
             if (this.replacementRenderTarget == null) {
                 this.replacementRenderTarget = ImGuiMCImpl.createRenderTarget(this.mainWindowSize.x, this.mainWindowSize.y, false);
