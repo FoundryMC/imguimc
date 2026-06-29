@@ -1,2 +1,1 @@
-- Fix crash when using textures outside main window
-- Update to 26.2 Release Fabric and NeoForge
+- Fix error when render is called in a callback

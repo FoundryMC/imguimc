@@ -5,7 +5,8 @@
   "refmap": "testmod.refmap.json",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "GlDeviceMixin"
+    "GlDeviceMixin",
+    "TitleScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
