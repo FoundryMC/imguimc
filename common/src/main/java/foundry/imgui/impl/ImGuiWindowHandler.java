@@ -14,6 +14,8 @@ public interface ImGuiWindowHandler {
 
     boolean init(Window window, boolean installCallbacks, ClientApi clientApi);
 
+    void swapBuffers(ImGuiViewport viewport);
+
     void shutdown();
 
     float getContentScaleForMonitor(long monitor);
@@ -22,14 +24,8 @@ public interface ImGuiWindowHandler {
 
     boolean isCorrectSize(int width, int height);
 
-    ClientApi getClientApi();
-
     @Contract("null,_->null;!null,!null->!null")
     <T extends RenderViewportData> @Nullable T getRenderData(ImGuiViewport vp, Supplier<T> factory);
-
-    //? if >=26.2 {
-    /*@Nullable com.mojang.blaze3d.systems.GpuSurface getSurface(ImGuiViewport viewport);
-    *///? }
 
     interface RenderViewportData extends NativeResource {
 

@@ -1,6 +1,5 @@
 package foundry.imgui.impl;
 
-import static org.lwjgl.glfw.GLFW.*;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -65,7 +64,7 @@ public class ImGuiHandler {
             }
             *///? } else {
             clientApi = ImGuiWindowHandler.ClientApi.OPENGL;
-             //? }
+            //? }
 
             this.windowImpl.init(mainWindow, true, clientApi);
             ImGuiMCPlatform.INSTANCE.imGuiLoadPost();
@@ -169,51 +168,12 @@ public class ImGuiHandler {
                         continue;
                     }
 
-                    this.swapBuffers(viewport);
+                    this.windowImpl.swapBuffers(viewport);
                 }
             }
         } finally {
             this.stop();
         }
-    }
-
-    private void swapBuffers(final ImGuiViewport viewport) {
-        if (viewport.isNotValidPtr()) {
-            return;
-        }
-
-        //? if >=26.2 {
-        /*final com.mojang.blaze3d.systems.GpuSurface windowSurface = this.windowImpl.getSurface(viewport);
-        if (windowSurface == null || !windowSurface.isAcquired()) {
-            return;
-        }
-        *///? }
-
-        final ImGuiWindowHandler.ClientApi clientApi = this.windowImpl.getClientApi();
-        final long window = viewport.getPlatformHandle();
-
-        //? if >= 26.2 {
-        /*final long oldContext;
-        if (clientApi == ImGuiWindowHandler.ClientApi.OPENGL) {
-            oldContext = glfwGetCurrentContext();
-            glfwMakeContextCurrent(window);
-        } else {
-            oldContext = 0;
-        }
-
-        windowSurface.present();
-
-        if (clientApi == ImGuiWindowHandler.ClientApi.OPENGL) {
-            glfwMakeContextCurrent(oldContext);
-        }
-        *///? } else {
-        if (clientApi == ImGuiWindowHandler.ClientApi.OPENGL) {
-            final long oldContext = glfwGetCurrentContext();
-            glfwMakeContextCurrent(window);
-            glfwSwapBuffers(window);
-            glfwMakeContextCurrent(oldContext);
-        }
-        //? }
     }
 
     public void updateFonts() {

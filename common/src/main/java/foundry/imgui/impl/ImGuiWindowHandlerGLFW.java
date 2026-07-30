@@ -552,11 +552,6 @@ public class ImGuiWindowHandlerGLFW implements ImGuiWindowHandler {
     }
 
     @Override
-    public ClientApi getClientApi() {
-        return this.data.clientApi;
-    }
-
-    @Override
     public boolean init(final Window window, final boolean installCallbacks, final ClientApi clientApi) {
         final ImGuiIO io = ImGui.getIO();
 
@@ -663,6 +658,46 @@ public class ImGuiWindowHandlerGLFW implements ImGuiWindowHandler {
             return glfwGetPlatform() == GLFW_PLATFORM_WAYLAND;
         }
         return false;
+    }
+
+    @Override
+    public void swapBuffers(final ImGuiViewport viewport) {
+        if (viewport.isNotValidPtr()) {
+            return;
+        }
+
+        //? if >=26.2 {
+        /*final com.mojang.blaze3d.systems.GpuSurface windowSurface = this.getSurface(viewport);
+        if (windowSurface == null || !windowSurface.isAcquired()) {
+            return;
+        }
+        *///? }
+
+        final ImGuiWindowHandler.ClientApi clientApi = this.data.clientApi;
+        final long window = viewport.getPlatformHandle();
+
+        //? if >= 26.2 {
+        /*final long oldContext;
+        if (clientApi == ImGuiWindowHandler.ClientApi.OPENGL) {
+            oldContext = glfwGetCurrentContext();
+            glfwMakeContextCurrent(window);
+        } else {
+            oldContext = 0;
+        }
+
+        windowSurface.present();
+
+        if (clientApi == ImGuiWindowHandler.ClientApi.OPENGL) {
+            glfwMakeContextCurrent(oldContext);
+        }
+        *///? } else {
+        if (clientApi == ImGuiWindowHandler.ClientApi.OPENGL) {
+            final long oldContext = glfwGetCurrentContext();
+            glfwMakeContextCurrent(window);
+            glfwSwapBuffers(window);
+            glfwMakeContextCurrent(oldContext);
+        }
+        //? }
     }
 
     @Override
@@ -1049,8 +1084,7 @@ public class ImGuiWindowHandlerGLFW implements ImGuiWindowHandler {
     }
 
     //? if >=26.2 {
-    /*@Override
-    public @Nullable com.mojang.blaze3d.systems.GpuSurface getSurface(final ImGuiViewport vp) {
+    /*public @Nullable com.mojang.blaze3d.systems.GpuSurface getSurface(final ImGuiViewport vp) {
         if (vp.getPlatformUserData() == null) {
             return null;
         }
