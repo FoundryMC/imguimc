@@ -1,7 +1,8 @@
 package foundry.imgui.impl.font;
 
 import static org.lwjgl.glfw.GLFW.*;
-import foundry.imgui.impl.ImGuiWindowImpl;
+import foundry.imgui.impl.ImGuiMCImpl;
+import foundry.imgui.impl.ImGuiWindowHandlerGLFW;
 import imgui.ImFont;
 import imgui.ImFontAtlas;
 import net.minecraft.resources.ResourceLocation;
@@ -28,7 +29,7 @@ public interface ImGuiFontManager extends PreparableReloadListener, NativeResour
             final FloatBuffer yscale = stack.mallocFloat(1);
             final long monitor = glfwGetPrimaryMonitor();
             glfwGetMonitorContentScale(monitor, xscale, yscale);
-            return Math.max(ImGuiWindowImpl.getContentScaleForMonitor(monitor), Math.max(xscale.get(0), yscale.get(0)));
+            return Math.max(ImGuiMCImpl.getContentScaleForMonitor(monitor), Math.max(xscale.get(0), yscale.get(0)));
         }
     }
 }

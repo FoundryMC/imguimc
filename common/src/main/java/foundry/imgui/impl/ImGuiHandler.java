@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ImGuiHandler {
 
     private final Window mainWindow;
-    private final ImGuiWindowImpl windowImpl;
+    private final ImGuiWindowHandler windowImpl;
     private final ImGuiRenderer rendererImpl;
     private final ImGuiFontManager fontManager;
     private final ImGuiContext imGuiContext;
@@ -34,7 +34,7 @@ public class ImGuiHandler {
 
     public ImGuiHandler(final Window mainWindow) {
         this.mainWindow = mainWindow;
-        this.windowImpl = new ImGuiWindowImpl(this);
+        this.windowImpl = new ImGuiWindowHandlerGLFW(this);
         this.rendererImpl = ImGuiMCPlatform.INSTANCE.createRenderer();
         this.fontManager = ImGuiMCPlatform.INSTANCE.createFontManager();
 
@@ -48,22 +48,26 @@ public class ImGuiHandler {
             this.fontsDirty = new AtomicBoolean();
             ImGuiMCPlatform.INSTANCE.imGuiLoadPre();
             this.rendererImpl.init();
+
+            final ImGuiWindowHandler.ClientApi clientApi;
             //? if >=1.21.6 {
             /*//? if >=26.2 {
             /^final String backendName = RenderSystem.getDevice().getDeviceInfo().backendName().toLowerCase(java.util.Locale.ROOT);
-            ^///? } else {
+             ^///? } else {
             final String backendName = RenderSystem.getDevice().getBackendName().toLowerCase(java.util.Locale.ROOT);
-             //? }
+            //? }
             if (backendName.contains("vulkan")) {
-                this.windowImpl.initForVulkan(mainWindow, true);
+                clientApi = ImGuiWindowHandler.ClientApi.VULKAN;
             } else if (backendName.contains("opengl")) {
-                this.windowImpl.initForOpenGL(mainWindow, true);
+                clientApi = ImGuiWindowHandler.ClientApi.OPENGL;
             } else {
-                this.windowImpl.initForOther(mainWindow, true);
+                clientApi = ImGuiWindowHandler.ClientApi.OTHER;
             }
             *///? } else {
-            this.windowImpl.initForOpenGL(mainWindow, true);
-            //? }
+            clientApi = ImGuiWindowHandler.ClientApi.OPENGL;
+             //? }
+
+            this.windowImpl.init(mainWindow, true, clientApi);
             ImGuiMCPlatform.INSTANCE.imGuiLoadPost();
 
             // TODO style sheet init event
@@ -179,18 +183,18 @@ public class ImGuiHandler {
         }
 
         //? if >=26.2 {
-        /*final com.mojang.blaze3d.systems.GpuSurface windowSurface = ImGuiWindowImpl.getSurface(viewport);
+        /*final com.mojang.blaze3d.systems.GpuSurface windowSurface = this.windowImpl.getSurface(viewport);
         if (windowSurface == null || !windowSurface.isAcquired()) {
             return;
         }
         *///? }
 
-        final ImGuiWindowImpl.GlfwClientApi clientApi = this.windowImpl.getClientApi();
+        final ImGuiWindowHandler.ClientApi clientApi = this.windowImpl.getClientApi();
         final long window = viewport.getPlatformHandle();
 
         //? if >= 26.2 {
         /*final long oldContext;
-        if (clientApi == ImGuiWindowImpl.GlfwClientApi.OPENGL) {
+        if (clientApi == ImGuiWindowHandler.ClientApi.OPENGL) {
             oldContext = glfwGetCurrentContext();
             glfwMakeContextCurrent(window);
         } else {
@@ -199,11 +203,11 @@ public class ImGuiHandler {
 
         windowSurface.present();
 
-        if (clientApi == ImGuiWindowImpl.GlfwClientApi.OPENGL) {
+        if (clientApi == ImGuiWindowHandler.ClientApi.OPENGL) {
             glfwMakeContextCurrent(oldContext);
         }
         *///? } else {
-        if (clientApi == ImGuiWindowImpl.GlfwClientApi.OPENGL) {
+        if (clientApi == ImGuiWindowHandler.ClientApi.OPENGL) {
             final long oldContext = glfwGetCurrentContext();
             glfwMakeContextCurrent(window);
             glfwSwapBuffers(window);
@@ -214,6 +218,10 @@ public class ImGuiHandler {
 
     public void updateFonts() {
         this.fontsDirty.set(true);
+    }
+
+    public ImGuiWindowHandler getWindowHandler() {
+        return this.windowImpl;
     }
 
     public ImGuiRenderer getRenderer() {

@@ -30,7 +30,7 @@ import java.util.function.Supplier;
  * modify the rendering routine in the way you'd like.
  */
 @ApiStatus.Internal
-public class ImGuiWindowImpl {
+public class ImGuiWindowHandlerGLFW implements ImGuiWindowHandler {
 
     protected static final String OS = System.getProperty("os.name", "generic").toLowerCase();
     protected static final boolean IS_WINDOWS = OS.contains("win");
@@ -46,7 +46,7 @@ public class ImGuiWindowImpl {
         //? if >= 26.1 {
         /*protected com.mojang.blaze3d.systems.GpuBackend backend = null;
         *///? }
-        protected GlfwClientApi clientApi = GlfwClientApi.UNKNOWN;
+        protected ClientApi clientApi = ClientApi.UNKNOWN;
         protected double time = 0.0;
         protected long mouseWindow = -1;
         protected long[] mouseCursors = new long[ImGuiMouseCursor.COUNT];
@@ -141,7 +141,7 @@ public class ImGuiWindowImpl {
 
     private final ImGuiHandler bridge;
 
-    public ImGuiWindowImpl(final ImGuiHandler bridge) {
+    public ImGuiWindowHandlerGLFW(final ImGuiHandler bridge) {
         this.bridge = bridge;
     }
 
@@ -149,11 +149,11 @@ public class ImGuiWindowImpl {
         return new ImStrSupplier() {
             @Override
             public String get() {
-                if (ImGuiWindowImpl.this.bridge.getWindow() == ImGuiWindowImpl.this.data.window) {
+                if (ImGuiWindowHandlerGLFW.this.bridge.getWindow() == ImGuiWindowHandlerGLFW.this.data.window) {
                     return Minecraft.getInstance().keyboardHandler.getClipboard();
                 }
 
-                final String clipboardString = glfwGetClipboardString(ImGuiWindowImpl.this.data.window);
+                final String clipboardString = glfwGetClipboardString(ImGuiWindowHandlerGLFW.this.data.window);
                 return clipboardString != null ? clipboardString : "";
             }
         };
@@ -163,10 +163,10 @@ public class ImGuiWindowImpl {
         return new ImStrConsumer() {
             @Override
             public void accept(final String text) {
-                if (ImGuiWindowImpl.this.bridge.getWindow() == ImGuiWindowImpl.this.data.window) {
+                if (ImGuiWindowHandlerGLFW.this.bridge.getWindow() == ImGuiWindowHandlerGLFW.this.data.window) {
                     Minecraft.getInstance().keyboardHandler.setClipboard(text);
                 } else {
-                    glfwSetClipboardString(ImGuiWindowImpl.this.data.window, text);
+                    glfwSetClipboardString(ImGuiWindowHandlerGLFW.this.data.window, text);
                 }
             }
         };
@@ -551,23 +551,13 @@ public class ImGuiWindowImpl {
         return new Data();
     }
 
-    public GlfwClientApi getClientApi() {
+    @Override
+    public ClientApi getClientApi() {
         return this.data.clientApi;
     }
 
-    public boolean initForOpenGL(final Window window, final boolean installCallbacks) {
-        return this.initImpl(window, installCallbacks, GlfwClientApi.OPENGL);
-    }
-
-    public boolean initForVulkan(final Window window, final boolean installCallbacks) {
-        return this.initImpl(window, installCallbacks, GlfwClientApi.VULKAN);
-    }
-
-    public boolean initForOther(final Window window, final boolean installCallbacks) {
-        return this.initImpl(window, installCallbacks, GlfwClientApi.OTHER);
-    }
-
-    private boolean initImpl(final Window window, final boolean installCallbacks, final GlfwClientApi clientApi) {
+    @Override
+    public boolean init(final Window window, final boolean installCallbacks, final ClientApi clientApi) {
         final ImGuiIO io = ImGui.getIO();
 
         this.data = this.newData();
@@ -675,6 +665,7 @@ public class ImGuiWindowImpl {
         return false;
     }
 
+    @Override
     public void shutdown() {
         final ImGuiIO io = ImGui.getIO();
 
@@ -944,7 +935,8 @@ public class ImGuiWindowImpl {
         }
     }
 
-    public static float getContentScaleForMonitor(final long monitor) {
+    @Override
+    public float getContentScaleForMonitor(final long monitor) {
         if (IS_APPLE) {
             return 1.0f;
         }
@@ -1037,12 +1029,14 @@ public class ImGuiWindowImpl {
         this.updateGamepads();
     }
 
+    @Override
     public boolean isCorrectSize(final int width, final int height) {
         return this.props.displayW == width && this.props.displayH == height;
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends RenderViewportData> @Nullable T getRenderData(final ImGuiViewport vp, final Supplier<T> factory) {
+    @Override
+    public <T extends RenderViewportData> @Nullable T getRenderData(final ImGuiViewport vp, final Supplier<T> factory) {
         if (vp.getPlatformUserData() == null) {
             return null;
         }
@@ -1055,7 +1049,8 @@ public class ImGuiWindowImpl {
     }
 
     //? if >=26.2 {
-    /*public static @Nullable com.mojang.blaze3d.systems.GpuSurface getSurface(final ImGuiViewport vp) {
+    /*@Override
+    public @Nullable com.mojang.blaze3d.systems.GpuSurface getSurface(final ImGuiViewport vp) {
         if (vp.getPlatformUserData() == null) {
             return null;
         }
@@ -1063,11 +1058,6 @@ public class ImGuiWindowImpl {
         return ((ViewportData) vp.getPlatformUserData()).windowSurface;
     }
     *///? }
-
-    public interface RenderViewportData extends NativeResource {
-
-        RenderTarget getRenderTarget();
-    }
 
     //--------------------------------------------------------------------------------------------------------
     // MULTI-VIEWPORT / PLATFORM INTERFACE SUPPORT
@@ -1183,10 +1173,10 @@ public class ImGuiWindowImpl {
 
             // Workaround for Linux: ignore mouse up events corresponding to losing focus of the previously focused window (#7733, #3158, #7922)
             if (IS_LINUX) {
-                ImGuiWindowImpl.this.data.mouseIgnoreButtonUpWaitForFocusLoss = true;
+                ImGuiWindowHandlerGLFW.this.data.mouseIgnoreButtonUpWaitForFocusLoss = true;
             }
 
-            final long shareWindow = (ImGuiWindowImpl.this.data.clientApi == GlfwClientApi.OPENGL) ? ImGuiWindowImpl.this.data.window : NULL;
+            final long shareWindow = (ImGuiWindowHandlerGLFW.this.data.clientApi == ClientApi.OPENGL) ? ImGuiWindowHandlerGLFW.this.data.window : NULL;
             vd.windowOwned = true;
 
             //? if >=26.1 {
@@ -1195,7 +1185,7 @@ public class ImGuiWindowImpl {
                         (int) vp.getSizeX(),
                         (int) vp.getSizeY(),
                         shareWindow,
-                        ImGuiWindowImpl.this.data.backend,
+                        ImGuiWindowHandlerGLFW.this.data.backend,
                         vp.getFlags());
             } catch (final com.mojang.blaze3d.systems.BackendCreationException throwable) {
                 final net.minecraft.CrashReport crashReport = net.minecraft.CrashReport.forThrowable(throwable, "Creating ImGui Viewport");
@@ -1216,21 +1206,21 @@ public class ImGuiWindowImpl {
             *///? }
 
             vp.setPlatformHandle(vd.window);
-            ImGuiWindowImpl.setRawPlatformHandle(vp, vd.window);
+            ImGuiWindowHandlerGLFW.setRawPlatformHandle(vp, vd.window);
 
             glfwSetWindowPos(vd.window, (int) vp.getPosX(), (int) vp.getPosY());
 
             // Install GLFW callbacks for secondary viewports
-            glfwSetWindowFocusCallback(vd.window, ImGuiWindowImpl.this::windowFocusCallback);
-            glfwSetCursorEnterCallback(vd.window, ImGuiWindowImpl.this::cursorEnterCallback);
-            glfwSetCursorPosCallback(vd.window, ImGuiWindowImpl.this::cursorPosCallback);
-            glfwSetMouseButtonCallback(vd.window, ImGuiWindowImpl.this::mouseButtonCallback);
-            glfwSetScrollCallback(vd.window, ImGuiWindowImpl.this::scrollCallback);
-            glfwSetKeyCallback(vd.window, ImGuiWindowImpl.this::keyCallback);
-            glfwSetCharCallback(vd.window, ImGuiWindowImpl.this::charCallback);
-            glfwSetWindowCloseCallback(vd.window, window -> ImGuiWindowImpl.this.windowCloseCallback(vp));
-            glfwSetWindowPosCallback(vd.window, (window, xpos, ypos) -> ImGuiWindowImpl.this.windowPosCallback(vp, xpos, ypos));
-            glfwSetWindowSizeCallback(vd.window, (window, width, height) -> ImGuiWindowImpl.this.windowSizeCallback(vp, width, height));
+            glfwSetWindowFocusCallback(vd.window, ImGuiWindowHandlerGLFW.this::windowFocusCallback);
+            glfwSetCursorEnterCallback(vd.window, ImGuiWindowHandlerGLFW.this::cursorEnterCallback);
+            glfwSetCursorPosCallback(vd.window, ImGuiWindowHandlerGLFW.this::cursorPosCallback);
+            glfwSetMouseButtonCallback(vd.window, ImGuiWindowHandlerGLFW.this::mouseButtonCallback);
+            glfwSetScrollCallback(vd.window, ImGuiWindowHandlerGLFW.this::scrollCallback);
+            glfwSetKeyCallback(vd.window, ImGuiWindowHandlerGLFW.this::keyCallback);
+            glfwSetCharCallback(vd.window, ImGuiWindowHandlerGLFW.this::charCallback);
+            glfwSetWindowCloseCallback(vd.window, window -> ImGuiWindowHandlerGLFW.this.windowCloseCallback(vp));
+            glfwSetWindowPosCallback(vd.window, (window, xpos, ypos) -> ImGuiWindowHandlerGLFW.this.windowPosCallback(vp, xpos, ypos));
+            glfwSetWindowSizeCallback(vd.window, (window, width, height) -> ImGuiWindowHandlerGLFW.this.windowSizeCallback(vp, width, height));
             //? if >=26.2 {
             /*glfwSetFramebufferSizeCallback(vd.window, (window, width, height) -> vd.windowSurfaceNeedsReconfiguring = true);
             *///? }
@@ -1252,9 +1242,9 @@ public class ImGuiWindowImpl {
 
                     // Release any keys that were pressed in the window being destroyed and are still held down,
                     // because we will not receive any release events after window is destroyed.
-                    for (int i = 0; i < ImGuiWindowImpl.this.data.keyOwnerWindows.length; i++) {
-                        if (ImGuiWindowImpl.this.data.keyOwnerWindows[i] == vd.window) {
-                            ImGuiWindowImpl.this.keyCallback(vd.window, i, 0, GLFW_RELEASE, 0); // Later params are only used for main viewport, on which this function is never called.
+                    for (int i = 0; i < ImGuiWindowHandlerGLFW.this.data.keyOwnerWindows.length; i++) {
+                        if (ImGuiWindowHandlerGLFW.this.data.keyOwnerWindows[i] == vd.window) {
+                            ImGuiWindowHandlerGLFW.this.keyCallback(vd.window, i, 0, GLFW_RELEASE, 0); // Later params are only used for main viewport, on which this function is never called.
                         }
                     }
 
@@ -1506,7 +1496,7 @@ public class ImGuiWindowImpl {
 
             if (vd.windowSurface.isAcquired()) {
                 final long oldContext;
-                if (this.data.clientApi == GlfwClientApi.OPENGL) {
+                if (this.data.clientApi == ClientApi.OPENGL) {
                     oldContext = glfwGetCurrentContext();
                     glfwMakeContextCurrent(vd.window);
                 } else {
@@ -1520,13 +1510,13 @@ public class ImGuiWindowImpl {
 
                 vd.windowSurface.blitFromTexture(com.mojang.blaze3d.systems.RenderSystem.getDevice().createCommandEncoder(), colorTexture);
 
-                if (this.data.clientApi == GlfwClientApi.OPENGL) {
+                if (this.data.clientApi == ClientApi.OPENGL) {
                     glfwMakeContextCurrent(oldContext);
                 }
             }
             *///? } else {
             final long oldContext;
-            if (this.data.clientApi == GlfwClientApi.OPENGL) {
+            if (this.data.clientApi == ClientApi.OPENGL) {
                 oldContext = glfwGetCurrentContext();
                 glfwMakeContextCurrent(vd.window);
             } else {
@@ -1539,7 +1529,7 @@ public class ImGuiWindowImpl {
             foundry.imgui.impl.renderer.OpenGLPresentation.get().presentToScreen(viewportData.getRenderTarget());
             //? }
 
-            if (this.data.clientApi == GlfwClientApi.OPENGL) {
+            if (this.data.clientApi == ClientApi.OPENGL) {
                 glfwMakeContextCurrent(oldContext);
             }
             //? }
@@ -1580,13 +1570,5 @@ public class ImGuiWindowImpl {
 
     protected void shutdownPlatformInterface() {
         ImGui.destroyPlatformWindows();
-    }
-
-    // Mirrors C++ enum GlfwClientApi. UNKNOWN matches C++'s GlfwClientApi_Unknown ("anything else").
-    public enum GlfwClientApi {
-        UNKNOWN,
-        OPENGL,
-        VULKAN,
-        OTHER
     }
 }

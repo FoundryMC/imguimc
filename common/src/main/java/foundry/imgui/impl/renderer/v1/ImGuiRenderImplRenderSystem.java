@@ -5,10 +5,8 @@ package foundry.imgui.impl.renderer.v1;
 /*import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.MainTarget;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.CommandEncoder;
@@ -22,7 +20,7 @@ import foundry.imgui.api.ImGuiMC;
 import foundry.imgui.api.ImGuiSampler;
 import foundry.imgui.api.ImGuiTextureProvider;
 import foundry.imgui.impl.ImGuiMCImpl;
-import foundry.imgui.impl.ImGuiWindowImpl;
+import foundry.imgui.impl.ImGuiWindowHandler;
 import foundry.imgui.impl.renderer.ImGuiRenderer;
 import imgui.*;
 import imgui.callback.ImPlatformFuncViewport;
@@ -123,9 +121,9 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
             //? }
             //? if >=26.2 {
             /^.withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(BlendFunction.TRANSLUCENT))
-            ^///? } else if >=26.1 {
+             ^///? } else if >=26.1 {
             /^.withColorTargetState(new com.mojang.blaze3d.pipeline.ColorTargetState(Optional.of(BlendFunction.TRANSLUCENT), com.mojang.blaze3d.pipeline.ColorTargetState.WRITE_ALL))
-             ^///? } else {
+            ^///? } else {
             .withBlend(BlendFunction.TRANSLUCENT)
              //? }
             .withCull(false)
@@ -134,12 +132,12 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
             .withPrimitiveTopology(com.mojang.blaze3d.PrimitiveTopology.TRIANGLES)
             ^///? } else {
             .withVertexFormat(VERTEX_FORMAT, VertexFormat.Mode.TRIANGLES)
-             //? }
+            //? }
             //? if >=26.2 {
             /^.withDepthStencilState(Optional.empty())
-            ^///? } else if >=26.1 {
+             ^///? } else if >=26.1 {
             /^.withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.ALWAYS_PASS, false))
-             ^///? } else {
+            ^///? } else {
             .withDepthTestFunction(com.mojang.blaze3d.platform.DepthTestFunction.NO_DEPTH_TEST)
             .withDepthWrite(false)
             //? }
@@ -180,7 +178,7 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
      * Data class to store implementation specific fields.
      * Same as {@code ImGui_ImplOpenGL3_Data}.
      ^/
-    protected static class ViewportData implements ImGuiWindowImpl.RenderViewportData {
+    protected static class ViewportData implements ImGuiWindowHandler.RenderViewportData {
         protected CachedImguiOrthoBuffer projectionMatrixBuffer;
         protected List<GpuBuffer> vertexData = new ArrayList<>();
         protected List<GpuBuffer> indexData = new ArrayList<>();
@@ -281,9 +279,9 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
         final ImGuiIO io = ImGui.getIO();
         //? if <=26.1 {
         io.setBackendRendererName("imgui-java_impl_" + device.getBackendName());
-         //? } else {
+        //? } else {
         /^io.setBackendRendererName("imgui-java_impl_" + device.getDeviceInfo().backendName());
-        ^///? }
+         ^///? }
 
         // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
         io.addBackendFlags(ImGuiBackendFlags.RendererHasVtxOffset);
@@ -473,9 +471,9 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
 
                     //? if >=26.2 {
                     /^renderPass.drawIndexed(elemCount, 1, idxOffset, vtxOffset, 0);
-                    ^///? } else {
+                     ^///? } else {
                     renderPass.drawIndexed(vtxOffset, idxOffset, elemCount, 1);
-                     //? }
+                    //? }
                 }
             }
         }
@@ -508,9 +506,9 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
         this.data.mainViewportData.renderTarget = renderTarget;
         //? if >=26.2 {
         /^this.renderDrawData(drawData, this.data.mainViewportData, Optional.empty());
-        ^///? } else {
+         ^///? } else {
         this.renderDrawData(drawData, this.data.mainViewportData, OptionalInt.empty());
-         //? }
+        //? }
     }
 
     @Override
@@ -575,9 +573,9 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
                 GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
                 //? if <= 26.1 {
                 com.mojang.blaze3d.textures.TextureFormat.RGBA8,
-                 //? } else {
+                //? } else {
                 /^com.mojang.blaze3d.GpuFormat.RGBA8_UNORM,
-                ^///? }
+                 ^///? }
                 width.get(),
                 height.get(),
                 1,
@@ -643,17 +641,17 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
 
         //? if >=26.2 {
         /^private static final org.joml.Vector4fc CLEAR_COLOR = new org.joml.Vector4f();
-        ^///? }
+         ^///? }
 
         @Override
         public void accept(final ImGuiViewport vp) {
             //? if >=26.2 {
             /^final Optional<org.joml.Vector4fc> clearColor = vp.hasFlags(ImGuiViewportFlags.NoRendererClear) ? Optional.empty() : Optional.of(CLEAR_COLOR);
-            ^///? } else {
+             ^///? } else {
             final OptionalInt clearColor = vp.hasFlags(ImGuiViewportFlags.NoRendererClear) ? OptionalInt.empty() : OptionalInt.of(0);
-             //? }
+            //? }
 
-            final ViewportData data = ImGuiWindowImpl.getRenderData(vp, ViewportData::new);
+            final ViewportData data = ImGuiMCImpl.getRenderData(vp, ViewportData::new);
             if (data != null) {
                 data.updateRenderTarget(vp);
                 ImGuiRenderImplRenderSystem.this.renderDrawData(vp.getDrawData(), data, clearColor);

@@ -9,7 +9,7 @@ import com.mojang.blaze3d.pipeline.TextureTarget;
 import foundry.imgui.api.ImGuiSampler;
 import foundry.imgui.api.ImGuiTextureProvider;
 import foundry.imgui.impl.ImGuiMCImpl;
-import foundry.imgui.impl.ImGuiWindowImpl;
+import foundry.imgui.impl.ImGuiWindowHandlerGLFW;
 import foundry.imgui.impl.renderer.ImGuiRenderer;
 import imgui.*;
 import imgui.callback.ImPlatformFuncViewport;
@@ -632,7 +632,7 @@ public class ImGuiRendererGL33 implements ImGuiRenderer {
      * Data class to store implementation specific fields.
      * Same as {@code ImGui_ImplOpenGL3_Data}.
      */
-    protected static class ViewportData implements ImGuiWindowImpl.RenderViewportData {
+    protected static class ViewportData implements ImGuiWindowHandlerGLFW.RenderViewportData {
         protected RenderTarget renderTarget;
         protected boolean ownedRenderTarget;
         //? if >=1.21.5 {
@@ -680,7 +680,7 @@ public class ImGuiRendererGL33 implements ImGuiRenderer {
     private final class RendererRenderWindowFunction extends ImPlatformFuncViewport {
         @Override
         public void accept(final ImGuiViewport vp) {
-            final ViewportData data = ImGuiWindowImpl.getRenderData(vp, ViewportData::new);
+            final ViewportData data = ImGuiMCImpl.getRenderData(vp, ViewportData::new);
             if (data != null) {
                 data.updateRenderTarget(vp);
                 final RenderTarget renderTarget = data.getRenderTarget();

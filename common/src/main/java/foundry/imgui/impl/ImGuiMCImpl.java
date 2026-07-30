@@ -6,12 +6,16 @@ import com.mojang.blaze3d.platform.Window;
 import foundry.imgui.api.ImGuiMC;
 import foundry.imgui.impl.platform.ImGuiMCPlatform;
 import imgui.ImGui;
+import imgui.ImGuiViewport;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.function.Supplier;
 
 @ApiStatus.Internal
 public final class ImGuiMCImpl {
@@ -55,9 +59,9 @@ public final class ImGuiMCImpl {
     public static RenderTarget getMainRenderTarget() {
         //? if >= 26.2 {
         /*return Minecraft.getInstance().gameRenderer.mainRenderTarget();
-        *///? } else {
+         *///? } else {
         return Minecraft.getInstance().getMainRenderTarget();
-         //? }
+        //? }
     }
 
     public static long getWindowHandle(final Window window) {
@@ -71,9 +75,9 @@ public final class ImGuiMCImpl {
     public static TextureTarget createRenderTarget(final int width, final int height, final boolean depth) {
         //? if >=26.2 {
         /*return new TextureTarget("ImGui", width, height, depth, com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
-        *///? } else if >=1.21.5 {
+         *///? } else if >=1.21.5 {
         /*return new TextureTarget("ImGui", width, height, depth);
-         *///? } else if >=1.21.2 {
+        *///? } else if >=1.21.2 {
         /*final TextureTarget renderTarget = new TextureTarget(width, height, depth);
           renderTarget.setClearColor(0,0,0,1);
           renderTarget.clear();
@@ -92,5 +96,22 @@ public final class ImGuiMCImpl {
         *///? } else {
         renderTarget.resize(width, height, net.minecraft.client.Minecraft.ON_OSX);
          //? }
+    }
+
+    public static float getContentScaleForMonitor(final long monitor) {
+        if (handler == null) {
+            return 1.0F;
+        }
+
+        return handler.getWindowHandler().getContentScaleForMonitor(monitor);
+    }
+
+    @Contract("null,_->null")
+    public static <T extends ImGuiWindowHandler.RenderViewportData> @Nullable T getRenderData(final ImGuiViewport vp, final Supplier<T> factory) {
+        if (handler == null) {
+            return null;
+        }
+
+        return handler.getWindowHandler().getRenderData(vp, factory);
     }
 }
