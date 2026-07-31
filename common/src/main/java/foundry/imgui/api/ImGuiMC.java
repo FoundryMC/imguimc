@@ -128,9 +128,15 @@ public interface ImGuiMC {
      */
     @Contract(value = "null->fail", pure = true)
     static @Nullable ImGuiTextureProvider getDepthTexture(final RenderTarget renderTarget) {
+        //? if >= 26.3 {
+        /*if (!renderTarget.hasDepth()) {
+            return null;
+        }
+        *///? } else {
         if (!renderTarget.useDepth) {
             return null;
         }
+        //? }
         //? if >=1.21.6 {
         /*return getTexture(renderTarget.getDepthTextureView());
         *///? } else if >=1.21.5 {

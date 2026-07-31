@@ -81,8 +81,8 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
             layout(std140) uniform Projection {
                 mat4 ProjMtx;
             };
-            out vec2 Frag_UV;
-            out vec4 Frag_Color;
+            layout(location = 0) out vec2 Frag_UV;
+            layout(location = 1) out vec4 Frag_Color;
             void main()
             {
                 Frag_UV = UV;
@@ -92,8 +92,8 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
             """;
     private static final String FRAGMENT_SHADER = """
             #version 410 core
-            in vec2 Frag_UV;
-            in vec4 Frag_Color;
+            layout(location = 0) in vec2 Frag_UV;
+            layout(location = 1) in vec4 Frag_Color;
             uniform sampler2D Texture;
             layout (location = 0) out vec4 Out_Color;
             void main()
@@ -112,7 +112,11 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
             .withFragmentShader(ResourceLocation.fromNamespaceAndPath(ImGuiMC.MOD_ID, "shader_fragment"))
             //? if >=26.2 {
             /^.withBindGroupLayout(com.mojang.blaze3d.pipeline.BindGroupLayout.builder()
+                    //? if >=26.3 {
+                    /^¹.withUniform("Texture", UniformType.COMBINED_IMAGE_SAMPLER)
+                    ¹^///? } else {
                     .withSampler("Texture")
+                    //? }
                     .withUniform("Projection", UniformType.UNIFORM_BUFFER)
                     .build())
             ^///? } else {
@@ -306,7 +310,14 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
         final RenderTarget renderTarget = data.renderTarget;
 
         // Make sure this data is never allocated on another context
+        //? if >=26.3 {
+        /^final var pipeline = device.compilePipeline(PIPELINE, ImGuiRenderImplRenderSystem::getShaderSource);
+        if (pipeline == null) {
+            throw new IllegalStateException("Failed to compile pipeline");
+        }
+        ^///? } else {
         device.precompilePipeline(PIPELINE, ImGuiRenderImplRenderSystem::getShaderSource);
+        //? }
 
         // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
         final int fbWidth = (int) (drawData.getDisplaySizeX() * drawData.getFramebufferScaleX());
@@ -406,7 +417,11 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
                 () -> "ImGui",
                 colorTexture,
                 clearColor)) {
+            //? if >=26.3 {
+            /^renderPass.setPipeline(pipeline);
+            ^///? } else {
             renderPass.setPipeline(PIPELINE);
+            //? }
             renderPass.setUniform("Projection", projectionMatrixBuffer);
 
             // Render command lists
@@ -464,7 +479,11 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
                             com.mojang.blaze3d.textures.FilterMode.LINEAR,
                             true);
                     final com.mojang.blaze3d.textures.GpuSampler sampler = textureId == 1 ? defaultSampler : this.data.samplers.get((int) (textureId - 2));
+                    //? if >=26.3 {
+                    /^¹renderPass.setUniform("Texture", textureId == 1 ? this.data.fontTextureView : this.data.textures.get((int) (textureId - 2)), sampler != null ? sampler : defaultSampler);
+                    ¹^///? } else {
                     renderPass.bindTexture("Texture", textureId == 1 ? this.data.fontTextureView : this.data.textures.get((int) (textureId - 2)), sampler != null ? sampler : defaultSampler);
+                    //? }
                     ^///?} else {
                     renderPass.bindSampler("Texture", textureId == 1 ? this.data.fontTextureView : this.data.textures.get((int) (textureId - 2)));
                      //?}

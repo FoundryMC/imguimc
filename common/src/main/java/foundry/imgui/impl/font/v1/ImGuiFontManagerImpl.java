@@ -2,8 +2,7 @@ package foundry.imgui.impl.font.v1;
 
 //? if >=1.21.4 {
 
-/*import static org.lwjgl.glfw.GLFW.*;
-import foundry.imgui.api.ImGuiMC;
+/*import foundry.imgui.api.ImGuiMC;
 import foundry.imgui.impl.ImGuiMCImpl;
 import foundry.imgui.impl.font.ImGuiFontManager;
 import foundry.imgui.impl.platform.ImGuiMCPlatform;
@@ -18,11 +17,9 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.NativeResource;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.FloatBuffer;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -137,38 +134,23 @@ public class ImGuiFontManagerImpl implements ImGuiFontManager {
 
     @Override
     public void rebuildFonts(final ImFontAtlas atlas) {
-        float scale;
-        try (final MemoryStack stack = MemoryStack.stackPush()) {
-            final Map<ResourceLocation, FontPack> fonts = new HashMap<>();
+        final float scale = ImGuiMCImpl.getPrimaryMonitorScale();
+        final Map<ResourceLocation, FontPack> fonts = new HashMap<>();
 
-            atlas.clear();
-
-            final FloatBuffer xscale = stack.mallocFloat(1);
-            final FloatBuffer yscale = stack.mallocFloat(1);
-            glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), xscale, yscale);
-
-            scale = Math.max(xscale.get(0), yscale.get(0));
-            // Hack because macs and wayland seem to report massive values for some reason
-            final int platform = glfwGetPlatform();
-            if (platform == GLFW_PLATFORM_COCOA || platform == GLFW_PLATFORM_WAYLAND) {
-                scale /= 2;
-            }
-            scale = Math.max(1.0F, scale);
-
-            for (final Map.Entry<ResourceLocation, FontPackBuilder> entry : this.fontBuilders.entrySet()) {
-                ImGuiMCImpl.LOGGER.info("Built {}", entry.getKey());
-                fonts.put(entry.getKey(), entry.getValue().build(scale));
-            }
-
-            this.fonts = Map.copyOf(fonts);
-            this.defaultFont = this.getFont(ImGuiMC.FONT_DEFAULT, false, false);
-            if (this.defaultFont == null) {
-                ImGuiMCImpl.LOGGER.error("Failed to load default font: {}, using ImGui default", ImGuiMC.FONT_DEFAULT);
-                this.defaultFont = atlas.addFontDefault();
-            }
-
-            ImGui.getIO().setFontDefault(this.defaultFont);
+        atlas.clear();
+        for (final Map.Entry<ResourceLocation, FontPackBuilder> entry : this.fontBuilders.entrySet()) {
+            ImGuiMCImpl.LOGGER.info("Built {}", entry.getKey());
+            fonts.put(entry.getKey(), entry.getValue().build(scale));
         }
+
+        this.fonts = Map.copyOf(fonts);
+        this.defaultFont = this.getFont(ImGuiMC.FONT_DEFAULT, false, false);
+        if (this.defaultFont == null) {
+            ImGuiMCImpl.LOGGER.error("Failed to load default font: {}, using ImGui default", ImGuiMC.FONT_DEFAULT);
+            this.defaultFont = atlas.addFontDefault();
+        }
+
+        ImGui.getIO().setFontDefault(this.defaultFont);
 
         ImGuiMCPlatform.INSTANCE.registerImGuiFonts(atlas, this.defaultFont, scale);
     }

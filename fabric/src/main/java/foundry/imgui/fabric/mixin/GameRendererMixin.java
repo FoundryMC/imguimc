@@ -1,7 +1,7 @@
 package foundry.imgui.fabric.mixin;
 
-import com.mojang.blaze3d.platform.Window;
 import foundry.imgui.impl.ImGuiMCImpl;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import org.spongepowered.asm.mixin.Mixin;
@@ -9,10 +9,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(Window.class)
-public class WindowMixin {
+@Mixin(GameRenderer.class)
+public class GameRendererMixin {
 
-    @Inject(method = "setDefaultErrorCallback", at = @At("TAIL"))
+    @Inject(method = "preloadUiShader", at = @At("HEAD"))
     public void init(final CallbackInfo ci) {
         ImGuiMCImpl.initHandler();
 

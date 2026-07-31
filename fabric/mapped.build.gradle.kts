@@ -1,7 +1,4 @@
 import org.gradle.internal.extensions.stdlib.capitalized
-import org.gradle.internal.fingerprint.classpath.impl.ClasspathFingerprintingStrategy.compileClasspath
-import org.gradle.internal.fingerprint.classpath.impl.ClasspathFingerprintingStrategy.runtimeClasspath
-import org.gradle.internal.impldep.org.eclipse.jgit.diff.DiffDriver
 
 plugins {
     id("net.fabricmc.fabric-loom-remap")
