@@ -33,7 +33,11 @@ public class ImGuiHandler {
 
     public ImGuiHandler(final Window mainWindow) {
         this.mainWindow = mainWindow;
+        //? >= 26.3 {
+        /*this.windowImpl = new ImGuiWindowHandlerSDL3(this);
+        *///? } else {
         this.windowImpl = new ImGuiWindowHandlerGLFW(this);
+        //? }
         this.rendererImpl = ImGuiMCPlatform.INSTANCE.createRenderer();
         this.fontManager = ImGuiMCPlatform.INSTANCE.createFontManager();
 

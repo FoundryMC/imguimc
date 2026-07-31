@@ -1,17 +1,13 @@
 package foundry.imgui.impl.font;
 
-import static org.lwjgl.glfw.GLFW.*;
 import foundry.imgui.impl.ImGuiMCImpl;
-import foundry.imgui.impl.ImGuiWindowHandlerGLFW;
 import imgui.ImFont;
 import imgui.ImFontAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.NativeResource;
-import java.nio.FloatBuffer;
 
 @ApiStatus.Internal
 public interface ImGuiFontManager extends PreparableReloadListener, NativeResource {
@@ -24,12 +20,6 @@ public interface ImGuiFontManager extends PreparableReloadListener, NativeResour
     void rebuildFonts(ImFontAtlas atlas);
 
     static float getFontScale() {
-        try (final MemoryStack stack = MemoryStack.stackPush()) {
-            final FloatBuffer xscale = stack.mallocFloat(1);
-            final FloatBuffer yscale = stack.mallocFloat(1);
-            final long monitor = glfwGetPrimaryMonitor();
-            glfwGetMonitorContentScale(monitor, xscale, yscale);
-            return Math.max(ImGuiMCImpl.getContentScaleForMonitor(monitor), Math.max(xscale.get(0), yscale.get(0)));
-        }
+        return ImGuiMCImpl.getPrimaryMonitorScale();
     }
 }

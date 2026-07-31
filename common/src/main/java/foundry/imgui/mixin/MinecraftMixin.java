@@ -45,7 +45,14 @@ public class MinecraftMixin {
         }
     }
 
-    //? if >=26.2 {
+    //? if >=26.3 {
+    /*@Inject(method = "renderFrame", at=@At(value = "INVOKE", target = "Lcom/mojang/renderpearl/api/commands/CommandEncoder;submit()V", shift = At.Shift.AFTER))
+    public void swapBuffers(final CallbackInfo ci) {
+        if (ImGuiMCImpl.handler != null) {
+            ImGuiMCImpl.handler.swapBuffers();
+        }
+    }
+    *///? } else if >=26.2 {
     /*@Inject(method = "renderFrame", at=@At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/CommandEncoder;submit()V", shift = At.Shift.AFTER))
     public void swapBuffers(final CallbackInfo ci) {
         if (ImGuiMCImpl.handler != null) {

@@ -5,7 +5,7 @@
   "refmap": "${id}.refmap.json",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "WindowMixin"
+    "GameRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

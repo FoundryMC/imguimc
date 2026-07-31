@@ -2,11 +2,10 @@ package foundry.imgui.mixin.renderer.v2.viewport;
 
 //? if >=1.21.6 {
 
-/*import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
-import static org.lwjgl.opengl.GL11C.*;
+/*import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL30C.*;
-import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.blaze3d.opengl.GlTexture;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -21,17 +20,25 @@ public class GlCommandEncoderMixin {
 
     @Inject(method = "<init>", at = @At("TAIL"))
     public void init(final CallbackInfo ci) {
-        this.imguimc$context = glfwGetCurrentContext();
+        //? if >=26.3 {
+        /^this.imguimc$context = org.lwjgl.sdl.SDLVideo.SDL_GL_GetCurrentContext();
+        ^///? } else {
+        this.imguimc$context = org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
+         //? }
     }
 
     //? if >=26.2 {
     /^@Inject(method = "presentTexture", at = @At("HEAD"), cancellable = true)
-    public void bindFramebufferTextures(final GpuTextureView gpuTextureView, final int swapchainWidth, final int swapchainHeight, final CallbackInfo ci) {
+    public void presentTexture(final GpuTextureView gpuTextureView, final int swapchainWidth, final int swapchainHeight, final CallbackInfo ci) {
     ^///? } else {
     @Inject(method = "presentTexture", at = @At("HEAD"), cancellable = true)
-    public void bindFramebufferTextures(final GpuTextureView gpuTextureView, final CallbackInfo ci) {
+    public void presentTexture(final GpuTextureView gpuTextureView, final CallbackInfo ci) {
     //? }
-        final long context = glfwGetCurrentContext();
+        //? if >=26.3 {
+        /^final long context = org.lwjgl.sdl.SDLVideo.SDL_GL_GetCurrentContext();
+        ^///? } else {
+        final long context = org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
+         //? }
         if (context == this.imguimc$context) {
             return;
         }

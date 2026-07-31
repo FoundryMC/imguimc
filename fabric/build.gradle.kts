@@ -1,6 +1,4 @@
 import org.gradle.internal.extensions.stdlib.capitalized
-import org.gradle.internal.fingerprint.classpath.impl.ClasspathFingerprintingStrategy.compileClasspath
-import org.gradle.internal.fingerprint.classpath.impl.ClasspathFingerprintingStrategy.runtimeClasspath
 
 plugins {
     id("net.fabricmc.fabric-loom")

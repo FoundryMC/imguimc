@@ -18,7 +18,7 @@ public interface ImGuiWindowHandler {
 
     void shutdown();
 
-    float getContentScaleForMonitor(long monitor);
+    float getContentScaleForPrimaryMonitor();
 
     void newFrame(RenderTarget mainRenderTarget);
 
