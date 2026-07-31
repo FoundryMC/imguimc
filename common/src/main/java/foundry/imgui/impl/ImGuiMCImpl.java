@@ -73,7 +73,9 @@ public final class ImGuiMCImpl {
     }
 
     public static TextureTarget createRenderTarget(final int width, final int height, final boolean depth) {
-        //? if >=26.2 {
+        //? if >=26.3 {
+        /*return new TextureTarget("ImGui", width, height, depth ? com.mojang.blaze3d.GpuFormat.D32_FLOAT : null, com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
+        *///? } else if >=26.2 {
         /*return new TextureTarget("ImGui", width, height, depth, com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
          *///? } else if >=1.21.5 {
         /*return new TextureTarget("ImGui", width, height, depth);
@@ -98,12 +100,12 @@ public final class ImGuiMCImpl {
          //? }
     }
 
-    public static float getContentScaleForMonitor(final long monitor) {
+    public static float getPrimaryMonitorScale() {
         if (handler == null) {
             return 1.0F;
         }
 
-        return handler.getWindowHandler().getContentScaleForMonitor(monitor);
+        return handler.getWindowHandler().getContentScaleForPrimaryMonitor();
     }
 
     @Contract("null,_->null")

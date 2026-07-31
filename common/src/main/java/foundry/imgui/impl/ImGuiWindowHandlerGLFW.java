@@ -1,9 +1,10 @@
+//? if <=26.2 {
 package foundry.imgui.impl;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Window;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import imgui.*;
 import imgui.callback.*;
 import imgui.flag.*;
@@ -16,7 +17,6 @@ import org.lwjgl.glfw.*;
 import org.lwjgl.system.Callback;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.system.NativeResource;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -954,7 +954,7 @@ public class ImGuiWindowHandlerGLFW implements ImGuiWindowHandler {
 
             // Warning: the validity of monitor DPI information on Windows depends on the application DPI awareness settings,
             // which generally needs to be set in the manifest or at runtime.
-            final float dpiScale = getContentScaleForMonitor(monitor);
+            final float dpiScale = this.getContentScaleForMonitor(monitor);
             if (dpiScale == 0.0f) {
                 continue; // Some accessibility applications are declaring virtual monitors with a DPI of 0 (#7902)
             }
@@ -971,7 +971,18 @@ public class ImGuiWindowHandlerGLFW implements ImGuiWindowHandler {
     }
 
     @Override
-    public float getContentScaleForMonitor(final long monitor) {
+    public float getContentScaleForPrimaryMonitor() {
+        float scale = this.getContentScaleForMonitor(glfwGetPrimaryMonitor());
+
+        // Hack because macs and wayland seem to report massive values for some reason
+        final int platform = glfwGetPlatform();
+        if (platform == GLFW_PLATFORM_COCOA || platform == GLFW_PLATFORM_WAYLAND) {
+            scale /= 2;
+        }
+        return Math.max(1.0F, scale);
+    }
+
+    private float getContentScaleForMonitor(final long monitor) {
         if (IS_APPLE) {
             return 1.0f;
         }
@@ -1606,3 +1617,4 @@ public class ImGuiWindowHandlerGLFW implements ImGuiWindowHandler {
         ImGui.destroyPlatformWindows();
     }
 }
+//? }
