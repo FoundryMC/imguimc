@@ -1,1 +1,1 @@
-- Fix error when render is called in a callback
+- Update imgui to 1.92.7.1
