@@ -271,7 +271,9 @@ public class ImGuiRendererGL33 implements ImGuiRenderer {
     public void renderPlatformWindows(final RenderTarget mainRenderTarget) {
         ImGuiRenderer.super.renderPlatformWindows(mainRenderTarget);
         //? if <1.21.5 {
-        mainRenderTarget.bindWrite(true);
+        if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
+            mainRenderTarget.bindWrite(true);
+        }
         //? }
     }
 
