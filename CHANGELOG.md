@@ -1,1 +1,2 @@
-- Update imgui to 1.92.7.1
+- Fix black screen on MacOS
+- Fix incorrect depth state on 26.1

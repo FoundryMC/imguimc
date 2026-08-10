@@ -133,10 +133,8 @@ public class ImGuiRenderImplRenderSystem implements ImGuiRenderer {
             ^///? } else {
             .withVertexFormat(VERTEX_FORMAT, VertexFormat.Mode.TRIANGLES)
             //? }
-            //? if >=26.2 {
+            //? if >=26.1 {
             /^.withDepthStencilState(Optional.empty())
-             ^///? } else if >=26.1 {
-            /^.withDepthStencilState(new com.mojang.blaze3d.pipeline.DepthStencilState(com.mojang.blaze3d.platform.CompareOp.ALWAYS_PASS, false))
             ^///? } else {
             .withDepthTestFunction(com.mojang.blaze3d.platform.DepthTestFunction.NO_DEPTH_TEST)
             .withDepthWrite(false)

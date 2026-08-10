@@ -10,9 +10,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class GlDeviceMixin {
 
     //? if >=1.21.6 {
-    @Shadow
+    /*@Shadow
     protected static boolean USE_GL_ARB_buffer_storage;
-    //? }
+    *///? }
 
     @Shadow
     protected static boolean USE_GL_ARB_vertex_attrib_binding;
@@ -20,8 +20,8 @@ public class GlDeviceMixin {
     @Inject(method = "<clinit>", at = @At("TAIL"))
     private static void classInit(final CallbackInfo ci) {
         //? if >=1.21.6 {
-        USE_GL_ARB_buffer_storage = false;
-        //? }
+        /*USE_GL_ARB_buffer_storage = false;
+        *///? }
         USE_GL_ARB_vertex_attrib_binding = false;
     }
 }
