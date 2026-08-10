@@ -1,2 +1,1 @@
-- Fix black screen on MacOS
-- Fix incorrect depth state on 26.1
+- Add support for new NeoForge mods list format

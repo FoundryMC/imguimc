@@ -41,6 +41,7 @@ processResources {
             'id'             : findProperty("mod.id"),
             'license'        : findProperty("mod.license"),
             'description'    : findProperty("mod.description"),
+            'logo_key'       : findProperty("mod.logo_key") ?: "logoFile",
             'neoforge'       : findProperty("deps.neoforge") ?: "missing",
             'neoforge_loader': findProperty("deps.neoforge_loader") ?: "missing",
             'fapi'           : findProperty("deps.fabric_api") ?: "missing",
