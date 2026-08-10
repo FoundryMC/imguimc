@@ -4,7 +4,6 @@ import foundry.imgui.api.ImGuiMC;
 import imgui.ImGui;
 import imgui.ImGuiIO;
 import imgui.type.ImBoolean;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
@@ -30,12 +29,14 @@ public class TestScreen extends Screen {
         }
     }
 
-    @Override
-    public void extractRenderState(@NotNull final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
+    //? if >=26.1 {
+    /*@Override
+    public void extractRenderState(@NotNull final net.minecraft.client.gui.GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
         try (final ImGuiMC.ActiveContext ctx = ImGuiMC.withImGui()) {
             if (ctx != null) {
                 this.render(ctx.io());
             }
         }
     }
+    *///? }
 }

@@ -267,14 +267,6 @@ public class ImGuiRendererGL33 implements ImGuiRenderer {
         this._renderDrawData(drawData);
     }
 
-    @Override
-    public void renderPlatformWindows(final RenderTarget mainRenderTarget) {
-        ImGuiRenderer.super.renderPlatformWindows(mainRenderTarget);
-        //? if <1.21.5 {
-        mainRenderTarget.bindWrite(true);
-        //? }
-    }
-
     private void _renderDrawData(final ImDrawData drawData) {
         // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
         final int fbWidth = (int) (drawData.getDisplaySizeX() * drawData.getFramebufferScaleX());

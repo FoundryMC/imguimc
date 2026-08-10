@@ -9,15 +9,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(targets = "com.mojang.blaze3d.opengl.GlDevice")
 public class GlDeviceMixin {
 
+    //? if >=1.21.6 {
     @Shadow
     protected static boolean USE_GL_ARB_buffer_storage;
+    //? }
 
     @Shadow
     protected static boolean USE_GL_ARB_vertex_attrib_binding;
 
     @Inject(method = "<clinit>", at = @At("TAIL"))
     private static void classInit(final CallbackInfo ci) {
+        //? if >=1.21.6 {
         USE_GL_ARB_buffer_storage = false;
+        //? }
         USE_GL_ARB_vertex_attrib_binding = false;
     }
 }

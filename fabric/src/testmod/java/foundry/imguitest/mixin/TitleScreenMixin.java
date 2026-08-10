@@ -17,10 +17,12 @@ public abstract class TitleScreenMixin extends Screen {
         super(title);
     }
 
-    @Inject(method = "init", at = @At("RETURN"))
+    //? if >=26.1 {
+    /*@Inject(method = "init", at = @At("RETURN"))
     public void init(final CallbackInfo ci) {
         this.addRenderableWidget(Button.builder(Component.literal("ImGui Demo"), button -> {
             this.minecraft.setScreenAndShow(new TestScreen());
         }).bounds(this.width - 75 - 3, 3, 70, 20).build());
     }
+    *///? }
 }
