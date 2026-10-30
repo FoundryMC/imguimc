@@ -13,7 +13,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class GameRendererMixin {
 
     @Inject(method = "preloadUiShader", at = @At("HEAD"))
+    //?if >=26.3 {
+    /*private static void init(final CallbackInfo ci) {
+    *///? } else {
     public void init(final CallbackInfo ci) {
+    //? }
         ImGuiMCImpl.initHandler();
 
         if (ImGuiMCImpl.handler == null) {

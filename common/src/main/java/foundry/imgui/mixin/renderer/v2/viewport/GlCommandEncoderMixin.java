@@ -16,20 +16,27 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class GlCommandEncoderMixin {
 
     @Unique
-    private long imguimc$context;
+    private long imguimc$mainContext;
 
     @Inject(method = "<init>", at = @At("TAIL"))
     public void init(final CallbackInfo ci) {
         //? if >=26.3 {
-        /^this.imguimc$context = org.lwjgl.sdl.SDLVideo.SDL_GL_GetCurrentContext();
+        /^this.imguimc$mainContext = org.lwjgl.sdl.SDLVideo.SDL_GL_GetCurrentContext();
         ^///? } else {
-        this.imguimc$context = org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
+        this.imguimc$mainContext = org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
          //? }
     }
 
     //? if >=26.2 {
     /^@Inject(method = "presentTexture", at = @At("HEAD"), cancellable = true)
-    public void presentTexture(final GpuTextureView gpuTextureView, final int swapchainWidth, final int swapchainHeight, final CallbackInfo ci) {
+    public void presentTexture(
+            //? if >=26.3
+            //final long windowHandle,
+            final GpuTextureView gpuTextureView,
+            final int swapchainWidth,
+            final int swapchainHeight,
+            final CallbackInfo ci
+    ) {
     ^///? } else {
     @Inject(method = "presentTexture", at = @At("HEAD"), cancellable = true)
     public void presentTexture(final GpuTextureView gpuTextureView, final CallbackInfo ci) {
@@ -39,7 +46,7 @@ public class GlCommandEncoderMixin {
         ^///? } else {
         final long context = org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
          //? }
-        if (context == this.imguimc$context) {
+        if (context == this.imguimc$mainContext) {
             return;
         }
 

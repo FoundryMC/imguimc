@@ -26,7 +26,9 @@ public class MinecraftMixin {
         }
     }
 
-    //? if >=26.1 {
+    //? if >=26.3 {
+    /*@Inject(method = "renderFrame", at=@At(value = "INVOKE_STRING", target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V", args = "ldc=present"))
+    *///? } elif >=26.1 {
     /*@Inject(method = "renderFrame", at=@At(value = "INVOKE_STRING", target = "Lnet/minecraft/util/profiling/ProfilerFiller;push(Ljava/lang/String;)V", args = "ldc=present"))
      *///? } elif >=1.21.6 {
     /*@Inject(method = "runTick", at = {

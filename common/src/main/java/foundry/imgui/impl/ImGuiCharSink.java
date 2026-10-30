@@ -34,11 +34,13 @@ public class ImGuiCharSink implements FormattedCharSink {
     }
 
     private static void openUri(final URI uri) {
-        //? if >=1.21.11 {
+        //? if >=26.3 {
+        /*com.mojang.blaze3d.Blaze3D.openUri(uri);
+        *///? } else if >=1.21.11 {
         /*net.minecraft.util.Util.getPlatform().openUri(uri);
-         *///? } else {
+        *///? } else {
         net.minecraft.Util.getPlatform().openUri(uri);
-        //? }
+         //? }
     }
 
     public void setup() {
@@ -104,7 +106,16 @@ public class ImGuiCharSink implements FormattedCharSink {
                 }
 
                 if (minecraft.options.chatLinksPrompt().get()) {
-                    //? if >=26.2 {
+                    //? if >=26.3 {
+                    /^final Screen oldScreen = minecraft.gui.screen();
+                    minecraft.gui.setScreen(new net.minecraft.client.gui.screens.ConfirmLinkScreen((confirm) -> {
+                        if (confirm) {
+                            openUri(uri1);
+                        }
+
+                        minecraft.gui.setScreen(oldScreen);
+                    }, uri1, false));
+                    ^///? } else if >=26.2 {
                     /^final Screen oldScreen = minecraft.gui.screen();
                     minecraft.gui.setScreen(new net.minecraft.client.gui.screens.ConfirmLinkScreen((confirm) -> {
                         if (confirm) {
@@ -142,7 +153,7 @@ public class ImGuiCharSink implements FormattedCharSink {
                 /^player.connection.sendUnattendedCommand(net.minecraft.commands.Commands.trimOptionalPrefix(cmd), minecraft.gui.screen());
                 ^///? } else if >=1.21.6 {
                 /^player.connection.sendUnattendedCommand(net.minecraft.commands.Commands.trimOptionalPrefix(cmd), minecraft.screen);
-                ^///? } else {
+                 ^///? } else {
                 final String command = cmd.startsWith("/") ? cmd.substring(1) : cmd;
                 if (!minecraft.player.connection.sendUnsignedCommand(command)) {
                     ImGuiMCImpl.LOGGER.error("Not allowed to run command with signed argument from click event: '{}'", command);
@@ -170,7 +181,7 @@ public class ImGuiCharSink implements FormattedCharSink {
             //? if >=26.1 {
             /^case HoverEvent.ShowItem(final net.minecraft.world.item.ItemStackTemplate item): {
                 final List<Component> tooltip = Screen.getTooltipFromItem(minecraft, item.create());
-            ^///? } else {
+                ^///? } else {
             case HoverEvent.ShowItem(final net.minecraft.world.item.ItemStack stack): {
                 final List<Component> tooltip = Screen.getTooltipFromItem(minecraft, stack);
             //? }
